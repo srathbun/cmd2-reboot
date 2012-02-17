@@ -1,7 +1,10 @@
 '''A sample application for cmd2.'''
 
-from cmd2 import Cmd, make_option, options
-import unittest, optparse, sys
+from    cmd2 import Cmd,        \
+                    make_option,\
+                    options
+
+import  unittest, optparse, sys
 
 class CmdLineApp(Cmd):
     multilineCommands = ['orate']
@@ -10,9 +13,9 @@ class CmdLineApp(Cmd):
     redirector = '->'
     Cmd.settable.append('maxrepeats   Max number of `--repeat`s allowed')
 
-    @options([make_option('-p', '--piglatin', action="store_true", help="atinLay"),
-              make_option('-s', '--shout', action="store_true", help="N00B EMULATION MODE"),
-              make_option('-r', '--repeat', type="int", help="output [n] times")
+    @options([make_option('-p', '--piglatin',   action="store_true", help="atinLay"),
+              make_option('-s', '--shout',      action="store_true", help="N00B EMULATION MODE"),
+              make_option('-r', '--repeat',     type="int",          help="output [n] times")
              ], arg_desc = '(text to say)')
     def do_speak(self, arg, opts=None):
         """Repeats what you tell me to."""
@@ -28,7 +31,7 @@ class CmdLineApp(Cmd):
             # self.stdout.write is better than "print", because Cmd can be
             # initialized with a non-standard output destination        
 
-    do_say = do_speak     # now "say" is a synonym for "speak"
+    do_say   = do_speak   # now "say" is a synonym for "speak"
     do_orate = do_speak   # another synonym, but this one takes multi-line input
 
 c = CmdLineApp()
