@@ -27,6 +27,9 @@ from __future__ import  generators,         \
                         print_function,     \
                         with_statement
 
+#   @FIXME
+#       Get unicode_literals working
+#       to simplify Python3 transition
 #from __future__ import  unicode_literals
 
 import cmd
@@ -50,24 +53,26 @@ from optparse   import make_option
 
 import pyparsing
 
-__version__ = '0.6.4'
+__version__ = '0.6.5'
 
 if sys.version_info[0] is 2:
+    '''
+    Packrat is causing Python3 errors that I don't understand.
+    
+    > /usr/local/Cellar/python3/3.2/lib/python3.2/site-packages/pyparsing-1.5.6-py3.2.egg/pyparsing.py(999)scanString()
+    -> nextLoc,tokens = parseFn( instring, preloc, callPreParse=False )
+    (Pdb) n
+    NameError: global name 'exc' is not defined
+    
+    (Pdb) parseFn
+    <bound method Or._parseCache of {Python style comment ^ C style comment}>
+    
+    Bug report filed: https://sourceforge.net/tracker/?func=detail&atid=617311&aid=3381439&group_id=97203
+    '''
     pyparsing.ParserElement.enablePackrat()
 
-'''
-Packrat is causing Python3 errors that I don't understand.
 
-> /usr/local/Cellar/python3/3.2/lib/python3.2/site-packages/pyparsing-1.5.6-py3.2.egg/pyparsing.py(999)scanString()
--> nextLoc,tokens = parseFn( instring, preloc, callPreParse=False )
-(Pdb) n
-NameError: global name 'exc' is not defined
 
-(Pdb) parseFn
-<bound method Or._parseCache of {Python style comment ^ C style comment}>
-
-Bug report filed: https://sourceforge.net/tracker/?func=detail&atid=617311&aid=3381439&group_id=97203
-'''
 
 class OptionParser(optparse.OptionParser):
     def exit(self, status=0, msg=None):
@@ -93,13 +98,8 @@ class OptionParser(optparse.OptionParser):
         raise optparse.OptParseError(msg)
         
 def remaining_args(oldArgs, newArgList):
-    '''
-    Preserves the spacing originally in the argument after
-    the removal of options.
+    '''Preserves argument's original spacing after the removal of options.'''
     
-    >>> remaining_args('-f bar   bar   cow', ['bar', 'cow'])
-    'bar   cow'
-    '''
     pattern     = '\s+'.join( re.escape(a) for a in newArgList ) + '\s*$'
     matchObj    = re.search(pattern, oldArgs)
     return oldArgs[matchObj.start():]
@@ -147,6 +147,7 @@ def options(option_list, arg_desc="arg"):
             optionParser.add_option(opt)
         optionParser.set_usage("%s [options] %s" % ( func.__name__[3:], arg_desc) )
         optionParser._func = func
+        
         def new_func(instance, arg):
             try:
                 opts, newArgList = optionParser.parse_args(arg.split())
@@ -170,6 +171,7 @@ def options(option_list, arg_desc="arg"):
         new_func.__doc__ = '%s\n%s' % (func.__doc__, optionParser.format_help())
         return new_func
     return option_setup
+
 
 class PasteBufferError(EnvironmentError):
     if sys.platform[:3] == 'win':
@@ -218,7 +220,7 @@ if subprocess.mswindows:
         def get_paste_buffer(*args):
             raise OSError, pastebufferr % ('pywin32', 'Download from http://sourceforge.net/projects/pywin32/')
         write_to_paste_buffer = get_paste_buffer
-elif sys.platform is 'darwin':
+elif sys.platform == 'darwin':
     can_clip = False
     try:
         # test for pbcopy - AFAIK, should always be installed on MacOS
@@ -277,15 +279,22 @@ else:
         def get_paste_buffer(*args):
             raise OSError, pastebufferr % ('xclip', 'On Debian/Ubuntu, install with "sudo apt-get install xclip"')
         write_to_paste_buffer = get_paste_buffer
-          
+
+
 pyparsing.ParserElement.setDefaultWhitespaceChars(' \t')
+
 
 class EmbeddedConsoleExit(SystemExit):
     pass
+
+
 class EmptyStatement(Exception):
     pass
+
+
 class NotSettableError(Exception):
     pass
+
 
 class ParsedString(str):
     def full_parsed_statement(self):
@@ -296,47 +305,38 @@ class ParsedString(str):
         return new       
     
     def with_args_replaced(self, newargs):
-        new        = ParsedString(newargs)
-        new.parsed = self.parsed
-        new.parser = self.parser
+        new                          = ParsedString(newargs)
+        new.parsed                   = self.parsed
+        new.parser                   = self.parser
         new.parsed['args']           = newargs
         new.parsed.statement['args'] = newargs
         return new
         
+
 class StubbornDict(dict):
     '''Dictionary that tolerates many input formats.
     Create it with stubbornDict(arg) factory function.
-    
-    >>> d = StubbornDict(large='gross', small='klein')
-    >>> sorted(d.items())
-    [('large', 'gross'), ('small', 'klein')]
-    >>> d.append(['plain', '  plaid'])
-    >>> sorted(d.items())
-    [('large', 'gross'), ('plaid', ''), ('plain', ''), ('small', 'klein')]
-    >>> d += '   girl Frauelein, Maedchen\\n\\n shoe schuh'
-    >>> sorted(d.items())
-    [('girl', 'Frauelein, Maedchen'), ('large', 'gross'), ('plaid', ''), ('plain', ''), ('shoe', 'schuh'), ('small', 'klein')]
     '''    
-    def update(self, arg):
-        dict.update(self, StubbornDict.to_dict(arg))
+    def __iadd__(self, other):
+        self.update(other)
+        return self
+    
+    def __add__(self, other):
+        selfcopy = copy.copy(self)
+        selfcopy.update(stubbornDict(other))
+        return selfcopy
+    
+    def __radd__(self, other):
+        return self.__add__(other)
+        
+    def update(self, other):
+        dict.update(self, StubbornDict.to_dict(other))
     
     append = update
     
-    def __iadd__(self, arg):
-        self.update(arg)
-        return self
-    def __add__(self, arg):
-        selfcopy = copy.copy(self)
-        selfcopy.update(stubbornDict(arg))
-        return selfcopy
-    def __radd__(self, arg):
-        selfcopy = copy.copy(self)
-        selfcopy.update(stubbornDict(arg))
-        return selfcopy    
-        
     @classmethod
     def to_dict(cls, arg):
-        'Generates dictionary from string or list of strings'
+        '''Generates dictionary from string or list of strings.'''
         if hasattr(arg, 'splitlines'):
             arg = arg.splitlines()
         if hasattr(arg, '__reversed__'):
@@ -355,15 +355,10 @@ class StubbornDict(dict):
             result = arg
         return result
 
+
 def stubbornDict(*arg, **kwarg):
-    '''
-    >>> sorted(stubbornDict('cow a bovine\\nhorse an equine').items())
-    [('cow', 'a bovine'), ('horse', 'an equine')]
-    >>> sorted(stubbornDict(['badger', 'porcupine a poky creature']).items())
-    [('badger', ''), ('porcupine', 'a poky creature')]
-    >>> sorted(stubbornDict(turtle='has shell', frog='jumpy').items())
-    [('frog', 'jumpy'), ('turtle', 'has shell')]
-    '''
+    #   @FIXME
+    #       Add DocString
     result = {}
     for a in arg:
         result.update(StubbornDict.to_dict(a))
@@ -401,9 +396,9 @@ def cast(current, new):
             new = new.lower()    
         except:
             pass
-        if (new is 'on')  or (new[0] in ('y','t')):
+        if (new == 'on')  or (new[0] in ('y','t')):
             return True
-        if (new is 'off') or (new[0] in ('n','f')):
+        if (new == 'off') or (new[0] in ('n','f')):
             return False
     else:
         try:
@@ -414,6 +409,7 @@ def cast(current, new):
             % (current, new))
     return current
         
+
 class Cmd(cmd.Cmd):
     echo                = False
     case_insensitive    = True     # Commands recognized regardless of case
@@ -456,16 +452,18 @@ class Cmd(cmd.Cmd):
         abbrev                Accept abbreviated commands
         ''')
     
+    #   ************************************
     #   End "original" variable declarations
-    #
+    #   ************************************
     #   (After this, variables were grouped here
     #   from various places within the class.)
+    
     _STOP_AND_EXIT       = True # distinguish end of script file from actual exit
     _STOP_SCRIPT_NO_EXIT = -999
     
     editor = os.environ.get('EDITOR')
     if not editor:
-        if sys.platform[:3] is 'win':
+        if sys.platform[:3] == 'win':
             editor = 'notepad'
         else:
             for editor in ['gedit', 'kate', 'vim', 'emacs', 'nano', 'pico']:
@@ -505,185 +503,8 @@ class Cmd(cmd.Cmd):
         self._init_parser()
             
     def _init_parser(self):
-        r'''
-        >>> c = Cmd()
-        >>> c.multilineCommands = ['multiline']
-        >>> c.case_insensitive = True
-        >>> c._init_parser()
-        >>> print (c.parser.parseString('').dump())
-        []
-        >>> print (c.parser.parseString('').dump())
-        []        
-        >>> print (c.parser.parseString('/* empty command */').dump())
-        []        
-        >>> print (c.parser.parseString('plainword').dump())
-        ['plainword', '']
-        - command: plainword
-        - statement: ['plainword', '']
-          - command: plainword        
-        >>> print (c.parser.parseString('termbare;').dump())
-        ['termbare', '', ';', '']
-        - command: termbare
-        - statement: ['termbare', '', ';']
-          - command: termbare
-          - terminator: ;
-        - terminator: ;        
-        >>> print (c.parser.parseString('termbare; suffx').dump())
-        ['termbare', '', ';', 'suffx']
-        - command: termbare
-        - statement: ['termbare', '', ';']
-          - command: termbare
-          - terminator: ;
-        - suffix: suffx
-        - terminator: ;        
-        >>> print (c.parser.parseString('barecommand').dump())
-        ['barecommand', '']
-        - command: barecommand
-        - statement: ['barecommand', '']
-          - command: barecommand
-        >>> print (c.parser.parseString('COMmand with args').dump())
-        ['command', 'with args']
-        - args: with args
-        - command: command
-        - statement: ['command', 'with args']
-          - args: with args
-          - command: command
-        >>> print (c.parser.parseString('command with args and terminator; and suffix').dump())
-        ['command', 'with args and terminator', ';', 'and suffix']
-        - args: with args and terminator
-        - command: command
-        - statement: ['command', 'with args and terminator', ';']
-          - args: with args and terminator
-          - command: command
-          - terminator: ;
-        - suffix: and suffix
-        - terminator: ;
-        >>> print (c.parser.parseString('simple | piped').dump())
-        ['simple', '', '|', ' piped']
-        - command: simple
-        - pipeTo:  piped
-        - statement: ['simple', '']
-          - command: simple
-        >>> print (c.parser.parseString('double-pipe || is not a pipe').dump())
-        ['double', '-pipe || is not a pipe']
-        - args: -pipe || is not a pipe
-        - command: double
-        - statement: ['double', '-pipe || is not a pipe']
-          - args: -pipe || is not a pipe
-          - command: double
-        >>> print (c.parser.parseString('command with args, terminator;sufx | piped').dump())
-        ['command', 'with args, terminator', ';', 'sufx', '|', ' piped']
-        - args: with args, terminator
-        - command: command
-        - pipeTo:  piped
-        - statement: ['command', 'with args, terminator', ';']
-          - args: with args, terminator
-          - command: command
-          - terminator: ;
-        - suffix: sufx
-        - terminator: ;
-        >>> print (c.parser.parseString('output into > afile.txt').dump())
-        ['output', 'into', '>', 'afile.txt']
-        - args: into
-        - command: output
-        - output: >
-        - outputTo: afile.txt
-        - statement: ['output', 'into']
-          - args: into
-          - command: output   
-        >>> print (c.parser.parseString('output into;sufx | pipethrume plz > afile.txt').dump())
-        ['output', 'into', ';', 'sufx', '|', ' pipethrume plz', '>', 'afile.txt']
-        - args: into
-        - command: output
-        - output: >
-        - outputTo: afile.txt
-        - pipeTo:  pipethrume plz
-        - statement: ['output', 'into', ';']
-          - args: into
-          - command: output
-          - terminator: ;
-        - suffix: sufx
-        - terminator: ;
-        >>> print (c.parser.parseString('output to paste buffer >> ').dump())
-        ['output', 'to paste buffer', '>>', '']
-        - args: to paste buffer
-        - command: output
-        - output: >>
-        - statement: ['output', 'to paste buffer']
-          - args: to paste buffer
-          - command: output
-        >>> print (c.parser.parseString('ignore the /* commented | > */ stuff;').dump())
-        ['ignore', 'the /* commented | > */ stuff', ';', '']
-        - args: the /* commented | > */ stuff
-        - command: ignore
-        - statement: ['ignore', 'the /* commented | > */ stuff', ';']
-          - args: the /* commented | > */ stuff
-          - command: ignore
-          - terminator: ;
-        - terminator: ;
-        >>> print (c.parser.parseString('has > inside;').dump())
-        ['has', '> inside', ';', '']
-        - args: > inside
-        - command: has
-        - statement: ['has', '> inside', ';']
-          - args: > inside
-          - command: has
-          - terminator: ;
-        - terminator: ;        
-        >>> print (c.parser.parseString('multiline has > inside an unfinished command').dump())
-        ['multiline', ' has > inside an unfinished command']
-        - multilineCommand: multiline        
-        >>> print (c.parser.parseString('multiline has > inside;').dump())
-        ['multiline', 'has > inside', ';', '']
-        - args: has > inside
-        - multilineCommand: multiline
-        - statement: ['multiline', 'has > inside', ';']
-          - args: has > inside
-          - multilineCommand: multiline
-          - terminator: ;
-        - terminator: ;        
-        >>> print (c.parser.parseString('multiline command /* with comment in progress;').dump())
-        ['multiline', ' command /* with comment in progress;']
-        - multilineCommand: multiline
-        >>> print (c.parser.parseString('multiline command /* with comment complete */ is done;').dump())
-        ['multiline', 'command /* with comment complete */ is done', ';', '']
-        - args: command /* with comment complete */ is done
-        - multilineCommand: multiline
-        - statement: ['multiline', 'command /* with comment complete */ is done', ';']
-          - args: command /* with comment complete */ is done
-          - multilineCommand: multiline
-          - terminator: ;
-        - terminator: ;
-        >>> print (c.parser.parseString('multiline command ends\n\n').dump())
-        ['multiline', 'command ends', '\n', '\n']
-        - args: command ends
-        - multilineCommand: multiline
-        - statement: ['multiline', 'command ends', '\n', '\n']
-          - args: command ends
-          - multilineCommand: multiline
-          - terminator: ['\n', '\n']
-        - terminator: ['\n', '\n']
-        >>> print (c.parser.parseString('multiline command "with term; ends" now\n\n').dump())
-        ['multiline', 'command "with term; ends" now', '\n', '\n']
-        - args: command "with term; ends" now
-        - multilineCommand: multiline
-        - statement: ['multiline', 'command "with term; ends" now', '\n', '\n']
-          - args: command "with term; ends" now
-          - multilineCommand: multiline
-          - terminator: ['\n', '\n']
-        - terminator: ['\n', '\n']
-        >>> print (c.parser.parseString('what if "quoted strings /* seem to " start comments?').dump())
-        ['what', 'if "quoted strings /* seem to " start comments?']
-        - args: if "quoted strings /* seem to " start comments?
-        - command: what
-        - statement: ['what', 'if "quoted strings /* seem to " start comments?']
-          - args: if "quoted strings /* seem to " start comments?
-          - command: what
-        '''
-        #outputParser = (pyparsing.Literal('>>') | (pyparsing.WordStart() + '>') | pyparsing.Regex('[^=]>'))('output')
-        outputParser = (pyparsing.Literal(self.redirector *2)       | \
-                       (pyparsing.WordStart()  + self.redirector)   | \
-                        pyparsing.Regex('[^=]' + self.redirector))('output')
+        #   @FIXME
+        #       Add docstring
         
         terminatorParser        = pyparsing.Or([(hasattr(t, 'parseString') and t) or pyparsing.Literal(t) for t in self.terminators])('terminator')
         stringEnd               = pyparsing.stringEnd ^ '\nEOF'
@@ -692,10 +513,18 @@ class Cmd(cmd.Cmd):
         pipe                    = pyparsing.Keyword('|', identChars='|')
         self.commentGrammars.ignore(pyparsing.quotedString).setParseAction(lambda x: '')
         doNotParse              = self.commentGrammars | self.commentInProgress | pyparsing.quotedString
-        afterElements           =   pyparsing.Optional( pipe + 
+        
+        #outputParser = (pyparsing.Literal('>>') | (pyparsing.WordStart() + '>') | pyparsing.Regex('[^=]>'))('output')
+        outputParser = (pyparsing.Literal(   2 * self.redirector) | \
+                       (pyparsing.WordStart()  + self.redirector) | \
+                        pyparsing.Regex('[^=]' + self.redirector))('output')
+
+        
+        
+        afterElements           = pyparsing.Optional( pipe + 
                                                         pyparsing.SkipTo(
-                                                            outputParser ^ stringEnd, 
-                                                            ignore=doNotParse)('pipeTo')) +\
+                                                            outputParser ^ stringEnd,       \
+                                                            ignore=doNotParse)('pipeTo')) + \
                                                         pyparsing.Optional(
                                                             outputParser + 
                                                             pyparsing.SkipTo(
@@ -703,6 +532,7 @@ class Cmd(cmd.Cmd):
                                                                 ignore=doNotParse
                                                             ).setParseAction(lambda x: x[0].strip())('outputTo')
                                                         )
+        
         if self.case_insensitive:
             self.multilineCommand.setParseAction(lambda x: x[0].lower())
             oneLineCommand.setParseAction(lambda x: x[0].lower())
@@ -712,12 +542,12 @@ class Cmd(cmd.Cmd):
             self.blankLineTerminator = (pyparsing.lineEnd + pyparsing.lineEnd)('terminator')
             self.blankLineTerminator.setResultsName('terminator')
             self.blankLineTerminationParser = ((self.multilineCommand ^ oneLineCommand) + pyparsing.SkipTo(self.blankLineTerminator, ignore=doNotParse).setParseAction(lambda x: x[0].strip())('args') + self.blankLineTerminator)('statement')
-        self.multilineParser = (((self.multilineCommand ^ oneLineCommand) + pyparsing.SkipTo(terminatorParser, ignore=doNotParse).setParseAction(lambda x: x[0].strip())('args') + terminatorParser)('statement') +
+        self.multilineParser = (((self.multilineCommand ^ oneLineCommand) + pyparsing.SkipTo(terminatorParser, ignore=doNotParse).setParseAction(lambda x: x[0].strip())('args') + terminatorParser)('statement') + \
                                 pyparsing.SkipTo(outputParser ^ pipe ^ stringEnd, ignore=doNotParse).setParseAction(lambda x: x[0].strip())('suffix') + afterElements)
         self.multilineParser.ignore(self.commentInProgress)
-        self.singleLineParser = ((oneLineCommand + pyparsing.SkipTo(terminatorParser ^ stringEnd ^ pipe ^ outputParser, ignore=doNotParse).setParseAction(lambda x:x[0].strip())('args'))('statement') +
+        self.singleLineParser = ((oneLineCommand + pyparsing.SkipTo(terminatorParser ^ stringEnd ^ pipe ^ outputParser, ignore=doNotParse).setParseAction(lambda x:x[0].strip())('args'))('statement') + \
                                  pyparsing.Optional(terminatorParser) + afterElements)
-        #self.multilineParser = self.multilineParser.setResultsName('multilineParser')
+        #self.multilineParser  = self.multilineParser.setResultsName('multilineParser')
         #self.singleLineParser = self.singleLineParser.setResultsName('singleLineParser')
         self.blankLineTerminationParser = self.blankLineTerminationParser.setResultsName('statement')
         self.parser = self.prefixParser + ( stringEnd                       |
@@ -736,8 +566,8 @@ class Cmd(cmd.Cmd):
         fileName    = pyparsing.Word(self.legalChars + '/\\')
         inputFrom   = fileName('inputFrom')
         inputFrom.setParseAction(replace_with_file_contents)
-        # a not-entirely-satisfactory way of distinguishing < as in "import from" from <
-        # as in "lesser than"
+        # a not-entirely-satisfactory way of distinguishing < as in "import from" 
+        # from < as in "lesser than"
         self.inputParser =  inputMark                     + \
                             pyparsing.Optional(inputFrom) + \
                             pyparsing.Optional('>')       + \
@@ -942,7 +772,7 @@ class Cmd(cmd.Cmd):
             raise EmptyStatement
         statement = self.parsed(line)
         while statement.parsed.multilineCommand and \
-             (statement.parsed.terminator is ''):
+             (statement.parsed.terminator == ''):
             statement = '%s\n%s' % (statement.parsed.raw, 
                                     self.pseudo_raw_input(self.continuation_prompt))                
             statement = self.parsed(statement)
@@ -972,7 +802,7 @@ class Cmd(cmd.Cmd):
                                                 mode)                            
             else:
                 sys.stdout = self.stdout = tempfile.TemporaryFile(mode="w+")
-                if statement.parsed.output is '>>':
+                if statement.parsed.output == '>>':
                     self.stdout.write(get_paste_buffer())
                     
     def restore_output(self, statement):
@@ -1023,7 +853,7 @@ class Cmd(cmd.Cmd):
             if not len(line):
                 line = 'EOF'
             else:
-                if line[-1] is '\n': # this was always true in Cmd
+                if line[-1] == '\n': # this was always true in Cmd
                     line = line[:-1] 
         return line
     
@@ -1080,6 +910,8 @@ class Cmd(cmd.Cmd):
         f.close()
         return data
 
+    #   @FIXME
+    #       Refactor into dedicated test module
     def runTranscriptTests(self, callargs):
         class TestMyAppCase(Cmd2TestCase):
             CmdApp = self.__class__        
@@ -1367,7 +1199,7 @@ class Cmd(cmd.Cmd):
             self.perror('Could not understand save target %s' % arg)
             raise SyntaxError(self.do_save.__doc__)
         fname = args.fname or self.default_file_name
-        if args.idx is '*':
+        if args.idx == '*':
             saveme = '\n\n'.join(self.history[:])
         elif args.idx:
             saveme = self.history[int(args.idx)-1]
@@ -1444,6 +1276,7 @@ class Cmd(cmd.Cmd):
     
     do_r    = do_run  
             
+
 class HistoryItem(str):
     listformat = '-------------------------[%d]\n%s\n'
     
@@ -1455,28 +1288,9 @@ class HistoryItem(str):
     def pr(self):
         return self.listformat % (self.idx, str(self))
         
+
 class History(list):
-    '''A list of HistoryItems that knows how to respond to user requests.
-    >>> h = History([HistoryItem('first'), HistoryItem('second'), HistoryItem('third'), HistoryItem('fourth')])
-    >>> h.span('-2..')
-    ['third', 'fourth']
-    >>> h.span('2..3')
-    ['second', 'third']
-    >>> h.span('3')
-    ['third']    
-    >>> h.span(':')
-    ['first', 'second', 'third', 'fourth']
-    >>> h.span('2..')
-    ['second', 'third', 'fourth']
-    >>> h.span('-1')
-    ['fourth']    
-    >>> h.span('-2..-3')
-    ['third', 'second']      
-    >>> h.search('o')
-    ['second', 'fourth']
-    >>> h.search('/IR/')
-    ['first', 'third']
-    '''
+    '''A list of HistoryItems that knows how to respond to user requests.'''
     def zero_based_index(self, onebased):
         result  = onebased
         if result > 0:
@@ -1569,6 +1383,7 @@ class History(list):
                     return (getme.lower() in hi.lowercase)
             return [itm for itm in self if isin(itm)]
 
+
 class Statekeeper(object):
     def __init__(self, obj, attribs):
         self.obj    = obj
@@ -1583,6 +1398,7 @@ class Statekeeper(object):
             for attrib in self.attribs:
                 setattr(self.obj, attrib, getattr(self, attrib))        
 
+
 class Borg(object):
     '''All instances of any Borg subclass will share state.
     from Python Cookbook, 2nd Ed., recipe 6.16'''
@@ -1591,52 +1407,46 @@ class Borg(object):
         obj = object.__new__(cls, *a, **k)
         obj.__dict__ = cls._shared_state
         return obj
-    
+
+
+#   @FIXME
+#       Refactor into dedicated test module    
 class OutputTrap(Borg):
-    '''Instantiate  an OutputTrap to divert/capture ALL stdout output.  For use in unit testing.
+    '''Instantiate an OutputTrap to divert/capture ALL stdout output (for unit testing).
     Call `tearDown()` to return to normal output.'''
     def __init__(self):
         self.contents   = ''
         self.old_stdout = sys.stdout
         sys.stdout      = self
-    def write(self, txt):
-        self.contents   += txt
+        
+    def tearDown(self):
+        sys.stdout      = self.old_stdout
+        self.contents   = ''
+    
     def read(self):
         result          = self.contents
         self.contents   = ''
         return result
-    def tearDown(self):
-        sys.stdout      = self.old_stdout
-        self.contents   = ''
         
+    def write(self, txt):
+        self.contents   += txt
+    
+
+#   @FIXME
+#       Refactor into dedicated test module        
 class Cmd2TestCase(unittest.TestCase):
-    '''Subclass this, setting CmdApp, to make a ``unittest.TestCase`` class
+    '''Subclass this (and set CmdApp) to make a ``unittest.TestCase`` class
        that will execute the commands in a transcript file and expect the results shown.
-       See example.py'''
+       
+       See example.py.'''
+    
     CmdApp = None
-    def fetchTranscripts(self):
-        self.transcripts = {}
-        for fileset in self.CmdApp.testfiles:
-            for fname in glob.glob(fileset):
-                tfile = open(fname)
-                self.transcripts[fname] = iter(tfile.readlines())
-                tfile.close()
-        if not len(self.transcripts):
-            raise (StandardError,), "No test files found--nothing to test."
-    def setUp(self):
-        if self.CmdApp:
-            self.outputTrap = OutputTrap()
-            self.cmdapp     = self.CmdApp()
-            self.fetchTranscripts()
-    def runTest(self): # was testall
-        if self.CmdApp:
-            its = sorted(self.transcripts.items())
-            for (fname, transcript) in its:
-                self._test_transcript(fname, transcript)
+    
     regexPattern = pyparsing.QuotedString(  quoteChar       =r'/', 
                                             escChar         ='\\', 
                                             multiline       =True, 
                                             unquoteResults  =True)
+    
     regexPattern.ignore(pyparsing.cStyleComment)
     notRegexPattern     = pyparsing.Word(pyparsing.printables)
     notRegexPattern.setParseAction(lambda t: re.escape(t[0]))
@@ -1699,10 +1509,35 @@ class Cmd2TestCase(unittest.TestCase):
             expected    = self.anyWhitespace.sub('', expected)
             result      = self.anyWhitespace.sub('', result)
             self.assert_(re.match(expected, result, re.MULTILINE | re.DOTALL), message)
-
+    
+    def setUp(self):
+        if self.CmdApp:
+            self.outputTrap = OutputTrap()
+            self.cmdapp     = self.CmdApp()
+            self.fetchTranscripts()
+    
     def tearDown(self):
         if self.CmdApp:
             self.outputTrap.tearDown()
+            
+    def fetchTranscripts(self):
+        self.transcripts = {}
+        for fileset in self.CmdApp.testfiles:
+            for fname in glob.glob(fileset):
+                tfile = open(fname)
+                self.transcripts[fname] = iter(tfile.readlines())
+                tfile.close()
+        if not len(self.transcripts):
+            raise (StandardError,), "No test files found--nothing to test."
+    
+    def runTest(self): # was testall
+        if self.CmdApp:
+            its = sorted(self.transcripts.items())
+            for (fname, transcript) in its:
+                self._test_transcript(fname, transcript)
+    
+    
+    
 
 if __name__ == '__main__':
     doctest.testmod(optionflags = doctest.NORMALIZE_WHITESPACE)

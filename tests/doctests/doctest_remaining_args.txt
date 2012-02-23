@@ -1,0 +1,4 @@
+>>> import cmd2
+>>> from cmd2 import remaining_args
+>>> remaining_args('-f bar   bar   cow', ['bar', 'cow'])
+'bar   cow'

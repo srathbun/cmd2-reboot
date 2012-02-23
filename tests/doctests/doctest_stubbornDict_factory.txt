@@ -1,0 +1,9 @@
+>>> import cmd2
+>>> from cmd2 import stubbornDict
+>>> sorted(stubbornDict('''cow a bovine
+... horse an equine''').items())
+[('cow', 'a bovine'), ('horse', 'an equine')]
+>>> sorted(stubbornDict(['badger', 'porcupine a poky creature']).items())
+[('badger', ''), ('porcupine', 'a poky creature')]
+>>> sorted(stubbornDict(turtle='has shell', frog='jumpy').items())
+[('frog', 'jumpy'), ('turtle', 'has shell')]

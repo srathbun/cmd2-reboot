@@ -1,0 +1,21 @@
+>>> import cmd2, doctest
+>>> from cmd2 import History, HistoryItem
+>>> h = History([HistoryItem('first'), HistoryItem('second'), HistoryItem('third'), HistoryItem('fourth')])
+>>> h.span('-2..')
+['third', 'fourth']
+>>> h.span('2..3')
+['second', 'third']
+>>> h.span('3')
+['third']
+>>> h.span(':')
+['first', 'second', 'third', 'fourth']
+>>> h.span('2..')
+['second', 'third', 'fourth']
+>>> h.span('-1')
+['fourth']
+>>> h.span('-2..-3')
+['third', 'second']
+>>> h.search('o')
+['second', 'fourth']
+>>> h.search('/IR/')
+['first', 'third']

@@ -1,0 +1,13 @@
+>>> import cmd2
+>>> from cmd2 import StubbornDict
+>>> d = StubbornDict(large='gross', small='klein')
+>>> sorted(d.items())
+[('large', 'gross'), ('small', 'klein')]
+>>> d.append(['plain', '  plaid'])
+>>> sorted(d.items())
+[('large', 'gross'), ('plaid', ''), ('plain', ''), ('small', 'klein')]
+>>> d += '''    girl Frauelein, Maedchen
+... 
+...                 shoe schuh'''
+>>> sorted(d.items())
+[('girl', 'Frauelein, Maedchen'), ('large', 'gross'), ('plaid', ''), ('plain', ''), ('shoe', 'schuh'), ('small', 'klein')]
