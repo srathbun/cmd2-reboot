@@ -224,16 +224,28 @@ elif sys.platform == 'darwin':
     can_clip = False
     try:
         # test for pbcopy - AFAIK, should always be installed on MacOS
-        subprocess.check_call('pbcopy -help', shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+        subprocess.check_call(  'pbcopy -help', 
+                                shell   =True, 
+                                stdout  =subprocess.PIPE, 
+                                stdin   =subprocess.PIPE, 
+                                stderr  =subprocess.PIPE)
         can_clip = True
     except (subprocess.CalledProcessError, OSError, IOError):
         pass
     if can_clip:
         def get_paste_buffer():
-            pbcopyproc = subprocess.Popen('pbcopy -help', shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+            pbcopyproc = subprocess.Popen(  'pbcopy -help', 
+                                            shell   =True, 
+                                            stdout  =subprocess.PIPE, 
+                                            stdin   =subprocess.PIPE, 
+                                            stderr  =subprocess.PIPE)
             return pbcopyproc.stdout.read()
         def write_to_paste_buffer(txt):
-            pbcopyproc = subprocess.Popen('pbcopy', shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+            pbcopyproc = subprocess.Popen(  'pbcopy', 
+                                            shell   =True, 
+                                            stdout  =subprocess.PIPE, 
+                                            stdin   =subprocess.PIPE, 
+                                            stderr  =subprocess.PIPE)
             pbcopyproc.communicate(txt.encode())
     else:
         def get_paste_buffer(*args):
@@ -311,7 +323,7 @@ class ParsedString(str):
         new.parsed['args']           = newargs
         new.parsed.statement['args'] = newargs
         return new
-        
+
 
 class StubbornDict(dict):
     '''Dictionary that tolerates many input formats.
@@ -364,7 +376,7 @@ def stubbornDict(*arg, **kwarg):
         result.update(StubbornDict.to_dict(a))
     result.update(kwarg)                      
     return StubbornDict(result)
-        
+
 def replace_with_file_contents(fname):
     if fname:
         try:
@@ -374,7 +386,7 @@ def replace_with_file_contents(fname):
     else:
         result = get_paste_buffer()
     return result      
-    
+
 def ljust(x, width, fillchar=' '):
     'analogous to str.ljust, but works for lists'
     if hasattr(x, 'ljust'):
@@ -383,7 +395,7 @@ def ljust(x, width, fillchar=' '):
         if len(x) < width:
             x = (x + [fillchar] * width)[:width]
         return x
-    
+
 def cast(current, new):
     '''Tries to force a new value into the same type as the current.'''
     typ = type(current)
@@ -408,7 +420,7 @@ def cast(current, new):
     print("Problem setting parameter (now %s) to %s; incorrect type?" 
             % (current, new))
     return current
-        
+
 
 class Cmd(cmd.Cmd):
     echo                = False
@@ -1097,12 +1109,13 @@ class Cmd(cmd.Cmd):
                 sys.stdout  = self.stdout
                 sys.stdin   = self.stdin
                 interp.interact(
-                    banner  = "Python %s on %s\n%s\n(%s)\n%s" %
-                        (sys.version, 
+                    banner  = "Python %s on %s\n%s\n(%s)\n%s" % (
+                        sys.version, 
                         sys.platform, 
                         cprt, 
                         self.__class__.__name__, 
-                        self.do_py.__doc__))
+                        self.do_py.__doc__)
+                    )
             except EmbeddedConsoleExit:
                 pass
             keepstate.restore()
@@ -1275,7 +1288,7 @@ class Cmd(cmd.Cmd):
             stop    = self.onecmd_plus_hooks(runme)
     
     do_r    = do_run  
-            
+
 
 class HistoryItem(str):
     listformat = '-------------------------[%d]\n%s\n'
@@ -1287,7 +1300,7 @@ class HistoryItem(str):
     
     def pr(self):
         return self.listformat % (self.idx, str(self))
-        
+
 
 class History(list):
     '''A list of HistoryItems that knows how to respond to user requests.'''
@@ -1390,9 +1403,11 @@ class Statekeeper(object):
         self.attribs= attribs
         if self.obj:
             self.save()
+    
     def save(self):
         for attrib in self.attribs:
             setattr(self, attrib, getattr(self.obj, attrib))
+    
     def restore(self):
         if self.obj:
             for attrib in self.attribs:
@@ -1403,6 +1418,7 @@ class Borg(object):
     '''All instances of any Borg subclass will share state.
     from Python Cookbook, 2nd Ed., recipe 6.16'''
     _shared_state = {}
+    
     def __new__(cls, *a, **k):
         obj = object.__new__(cls, *a, **k)
         obj.__dict__ = cls._shared_state
@@ -1430,7 +1446,7 @@ class OutputTrap(Borg):
         
     def write(self, txt):
         self.contents   += txt
-    
+
 
 #   @FIXME
 #       Refactor into dedicated test module        
@@ -1535,9 +1551,9 @@ class Cmd2TestCase(unittest.TestCase):
             its = sorted(self.transcripts.items())
             for (fname, transcript) in its:
                 self._test_transcript(fname, transcript)
-    
-    
-    
+
+
+
 
 if __name__ == '__main__':
     doctest.testmod(optionflags = doctest.NORMALIZE_WHITESPACE)
