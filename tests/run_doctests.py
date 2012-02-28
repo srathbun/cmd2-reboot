@@ -1,5 +1,11 @@
 #!/usr/bin/env python -B
+'''Runs all tests in the `doctests` directory.
 
+NOTE:
+    In order for the tests to pass, the PYTHONPATH
+    environment variable needs to look in the 
+    parent directory (`..`).  
+'''
 import  doctest
 
 import  cmd2
