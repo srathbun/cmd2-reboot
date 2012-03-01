@@ -1,3 +1,4 @@
+# -*- coding: UTF-8 -*-
 '''Variant on standard library's cmd with extra features.
 
 To use, simply import cmd2.Cmd instead of cmd.Cmd; use precisely as though you
@@ -74,29 +75,6 @@ if sys.version_info[0] is 2:
 
 
 
-class OptionParser(optparse.OptionParser):
-    def exit(self, status=0, msg=None):
-        self.values._exit = True
-        if msg:
-            print(msg)
-            
-    def print_help(self, *args, **kwargs):
-        try:
-            print(self._func.__doc__)
-        except AttributeError:
-            pass
-        optparse.OptionParser.print_help(self, *args, **kwargs)
-
-    def error(self, msg):
-        '''error(msg : string)
-
-        Print a usage message incorporating 'msg' to stderr and exit.
-        
-        If you override this in a subclass, it should NOT return!
-        It should exit, or raise an exception.
-        '''
-        raise optparse.OptParseError(msg)
-        
 def remaining_args(oldArgs, newArgList):
     '''Preserves argument's original spacing after the removal of options.'''
     
@@ -306,6 +284,30 @@ class EmptyStatement(Exception):
 
 class NotSettableError(Exception):
     pass
+    
+    
+class OptionParser(optparse.OptionParser):
+    def exit(self, status=0, msg=None):
+        self.values._exit = True
+        if msg:
+            print(msg)
+            
+    def print_help(self, *args, **kwargs):
+        try:
+            print(self._func.__doc__)
+        except AttributeError:
+            pass
+        optparse.OptionParser.print_help(self, *args, **kwargs)
+
+    def error(self, msg):
+        '''error(msg : string)
+
+        Print a usage message incorporating 'msg' to stderr and exit.
+        
+        If you override this in a subclass, it should NOT return!
+        It should exit, or raise an exception.
+        '''
+        raise optparse.OptParseError(msg)
 
 
 class ParsedString(str):
@@ -348,23 +350,36 @@ class StubbornDict(dict):
     
     @classmethod
     def to_dict(cls, arg):
-        '''Generates dictionary from string or list of strings.'''
+        '''Generates dictionary from a string or list of strings.'''
+        result = {}
+        
         if hasattr(arg, 'splitlines'):
             arg = arg.splitlines()
-        if hasattr(arg, '__reversed__'):
-            result = {}    
+        
+        #if isinstance(arg, list):
+        if hasattr(arg, '__reversed__'):    
             for a in arg:
+                if not isinstance(a, str):
+                    raise TypeError, "A list arguments to `to_dict()` must only contain strings!" 
+                    
                 a = a.strip()
+                
                 if a:
                     key_val = a.split(None, 1)
-                    key = key_val[0]
-                    if len(key_val) > 1:
+                    key     = key_val[0]
+                    
+                    # print()
+#                     print('{', key, ':', key_val, '}')
+#                     print()
+                    
+                    if len( key_val ) > 1:
                         val = key_val[1]
                     else:
                         val = ''
                     result[key] = val
         else:
             result = arg
+            
         return result
 
 
@@ -1304,52 +1319,9 @@ class HistoryItem(str):
 
 class History(list):
     '''A list of HistoryItems that knows how to respond to user requests.'''
-    def zero_based_index(self, onebased):
-        result  = onebased
-        if result > 0:
-            result -= 1
-        return result
     
-    def to_index(self, raw):
-        if raw:
-            result  = self.zero_based_index(int(raw))
-        else:
-            result  = None
-        return result
-    
-    def search(self, target):
-        target = target.strip()
-        if len(target) > 1 and target[0] == target[-1] == '/':
-            target  = target[1:-1]
-        else:
-            target  = re.escape(target)
-        pattern = re.compile(target, re.IGNORECASE)
-        return [s for s in self if pattern.search(s)]
-    
-    spanpattern = re.compile(r'^\s*(?P<start>\-?\d+)?\s*(?P<separator>:|(\.{2,}))?\s*(?P<end>\-?\d+)?\s*$')
-    
-    def span(self, raw):
-        if raw.lower() in ('*', '-', 'all'):
-            raw = ':'
-        results = self.spanpattern.search(raw)
-        if not results:
-            raise IndexError
-        if not results.group('separator'):
-            return [self[self.to_index(results.group('start'))]]
-        start   = self.to_index(results.group('start'))
-        end     = self.to_index(results.group('end'))
-        reverse = False
-        if end is not None:
-            if end < start:
-                (start, end) = (end, start)
-                reverse = True
-            end += 1
-        result = self[start:end]
-        if reverse:
-            result.reverse()
-        return result
-                
-    rangePattern = re.compile(r'^\s*(?P<start>[\d]+)?\s*\-\s*(?P<end>[\d]+)?\s*$')
+    rangePattern    = re.compile(r'^\s*(?P<start>[\d]+)?\s*\-\s*(?P<end>[\d]+)?\s*$')
+    spanpattern     = re.compile(r'^\s*(?P<start>\-?\d+)?\s*(?P<separator>:|(\.{2,}))?\s*(?P<end>\-?\d+)?\s*$')
     
     def append(self, new):
         new     = HistoryItem(new)
@@ -1395,7 +1367,50 @@ class History(list):
                 def isin(hi):
                     return (getme.lower() in hi.lowercase)
             return [itm for itm in self if isin(itm)]
-
+    
+    def search(self, target):
+        target = target.strip()
+        if len(target) > 1 and target[0] == target[-1] == '/':
+            target  = target[1:-1]
+        else:
+            target  = re.escape(target)
+        pattern = re.compile(target, re.IGNORECASE)
+        return [s for s in self if pattern.search(s)]
+        
+    def span(self, raw):
+        if raw.lower() in ('*', '-', 'all'):
+            raw = ':'
+        results = self.spanpattern.search(raw)
+        if not results:
+            raise IndexError
+        if not results.group('separator'):
+            return [self[self.to_index(results.group('start'))]]
+        start   = self.to_index(results.group('start'))
+        end     = self.to_index(results.group('end'))
+        reverse = False
+        if end is not None:
+            if end < start:
+                (start, end) = (end, start)
+                reverse = True
+            end += 1
+        result = self[start:end]
+        if reverse:
+            result.reverse()
+        return result
+                
+    def to_index(self, raw):
+        if raw:
+            result  = self.zero_based_index(int(raw))
+        else:
+            result  = None
+        return result
+    
+    def zero_based_index(self, onebased):
+        result  = onebased
+        if result > 0:
+            result -= 1
+        return result
+    
 
 class Statekeeper(object):
     def __init__(self, obj, attribs):
@@ -1419,6 +1434,8 @@ class Borg(object):
     from Python Cookbook, 2nd Ed., recipe 6.16'''
     _shared_state = {}
     
+    #   @FIXME
+    #       Use new-style Metaclasses
     def __new__(cls, *a, **k):
         obj = object.__new__(cls, *a, **k)
         obj.__dict__ = cls._shared_state
@@ -1558,6 +1575,8 @@ class Cmd2TestCase(unittest.TestCase):
 if __name__ == '__main__':
     doctest.testmod(optionflags = doctest.NORMALIZE_WHITESPACE)
 
+
+
 '''
 To make your application transcript-testable, replace 
 
@@ -1580,5 +1599,3 @@ into a file, ``transcript.test``, and invoke the test like::
 
 Wildcards can be used to test against multiple transcript files.
 '''
-
-
