@@ -1658,6 +1658,8 @@ class Cmd2TestCase(unittest.TestCase):
     anyWhitespace       = re.compile(r'\s', re.DOTALL | re.MULTILINE)
     
     def _test_transcript(self, fname, transcript):
+        #   @FIXME 
+        #       Add DocString
         lineNum     = 0
         finished    = False
         line        = transcript.next()
@@ -1715,16 +1717,22 @@ class Cmd2TestCase(unittest.TestCase):
             self.assert_(re.match(expected, result, re.MULTILINE | re.DOTALL), message)
     
     def setUp(self):
+        #   @FIXME 
+        #       Add DocString
         if self.CmdApp:
             self.outputTrap = OutputTrap()
             self.cmdapp     = self.CmdApp()
             self.fetchTranscripts()
     
     def tearDown(self):
+        #   @FIXME 
+        #       Add DocString
         if self.CmdApp:
             self.outputTrap.tearDown()
             
     def fetchTranscripts(self):
+        #   @FIXME 
+        #       Add DocString
         self.transcripts = {}
         for fileset in self.CmdApp.testfiles:
             for fname in glob.glob(fileset):
@@ -1735,6 +1743,8 @@ class Cmd2TestCase(unittest.TestCase):
             raise (StandardError,), 'No test files found; nothing to test.'
     
     def runTest(self): # was `testall`
+        #   @FIXME 
+        #       Add DocString
         if self.CmdApp:
             its = sorted(self.transcripts.items())
             for (fname, transcript) in its:
