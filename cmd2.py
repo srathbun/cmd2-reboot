@@ -30,8 +30,6 @@ from __future__ import  generators,         \
                         with_statement
                         
                         
-                        
-
 __version__ = '0.6.5'
 
 
@@ -88,13 +86,20 @@ if six.PY3:
     pyparsing.ParserElement.enablePackrat()
 
 
+#   @FIXME
+#       Consider refactoring into parser module
 def remaining_args(oldArgs, newArgList):
     '''Preserves argument's original spacing after the removal of options.'''
     
     pattern     = '\s+'.join( re.escape(a) for a in newArgList ) + '\s*$'
     matchObj    = re.search(pattern, oldArgs)
     return oldArgs[matchObj.start():]
-   
+
+
+#   @FIXME
+#       Consider refactoring into Cmd class
+#   @FIXME
+#       Consider using `__getattr__()` instead
 def _attr_get_(obj, attr):
     '''Returns an attribute's value, or None (no error) if undefined.
        Analagous to .get() for dictionaries.  Useful when checking for
@@ -107,10 +112,16 @@ def _attr_get_(obj, attr):
 
 optparse.Values.get = _attr_get_
 
+
+#   @FIXME
+#       Find a more appropriate scope if possible.
+#       (i.e. less “global” than module-level.)
 options_defined = [] # used to distinguish --options from SQL-style --comments
 
 
-def options(option_list, arg_desc="arg"):
+#   @FIXME
+#       Consider refactoring into support module
+def options(option_list, arg_desc='arg'):
     '''Used as a decorator and passed a list of optparse-style options,
        alters a cmd2 method to populate its ``opts`` argument from its
        raw text argument.
@@ -164,7 +175,8 @@ def options(option_list, arg_desc="arg"):
         return new_func
     return option_setup
 
-
+#   @FIXME
+#       Refactor into Error module
 class PasteBufferError(EnvironmentError):
     if sys.platform[:3] == 'win':
         errmsg = '''
@@ -188,11 +200,18 @@ class PasteBufferError(EnvironmentError):
     def __init__(self):
         Exception.__init__(self, self.errmsg)
 
-pastebufferr = '''Redirecting to or from paste buffer requires %s
-to be installed on operating system.
-%s'''
+pastebufferr =  ''' Redirecting to or from paste buffer requires %s
+                    to be installed on operating system.
+                    %s
+                '''
 
+
+#   @FIXME
+#       Refactor into support module
 if subprocess.mswindows:
+    #   @FIXME
+    #       Add DocString 
+    #       (what does this roughly-100-line-codeblock do?)
     try:
         import win32clipboard
         def get_paste_buffer():
@@ -288,18 +307,26 @@ else:
 pyparsing.ParserElement.setDefaultWhitespaceChars(' \t')
 
 
+#   @FIXME
+#       Refactor into error module
 class EmbeddedConsoleExit(SystemExit):
     pass
 
 
+#   @FIXME
+#       Refactor into error module
 class EmptyStatement(Exception):
     pass
 
 
+#   @FIXME
+#       Refactor into error module
 class NotSettableError(Exception):
     pass
-    
-    
+
+
+#   @FIXME
+#       Refactor into parsing module
 class OptionParser(optparse.OptionParser):
     def exit(self, status=0, msg=None):
         self.values._exit = True
@@ -324,6 +351,8 @@ class OptionParser(optparse.OptionParser):
         raise optparse.OptParseError(msg)
 
 
+#   @FIXME
+#       Refactor into parsing module
 class ParsedString(str):
     def full_parsed_statement(self):
         new        = ParsedString('%s %s' % (self.parsed.command, 
@@ -341,6 +370,8 @@ class ParsedString(str):
         return new
 
 
+#   @FIXME
+#       Refactor into support module
 class StubbornDict(dict):
     '''Dictionary that tolerates many input formats.
     Create it with stubbornDict(arg) factory function.
@@ -396,7 +427,8 @@ class StubbornDict(dict):
             
         return result
 
-
+#   @FIXME
+#       Refactor into support module
 def stubbornDict(*arg, **kwarg):
     #   @FIXME
     #       Add DocString
@@ -406,7 +438,11 @@ def stubbornDict(*arg, **kwarg):
     result.update(kwarg)                      
     return StubbornDict(result)
 
+#   @FIXME
+#       Refactor into support module
 def replace_with_file_contents(fname):
+    #   @FIXME
+    #       Add DocString
     if fname:
         try:
             result = open(os.path.expanduser(fname[0])).read()
@@ -416,8 +452,10 @@ def replace_with_file_contents(fname):
         result = get_paste_buffer()
     return result      
 
+#   @FIXME
+#       Refactor into support module
 def ljust(x, width, fillchar=' '):
-    'analogous to str.ljust, but works for lists'
+    '''Works like str.ljust for lists'''
     if hasattr(x, 'ljust'):
         return x.ljust(width, fillchar)
     else:
@@ -425,8 +463,11 @@ def ljust(x, width, fillchar=' '):
             x = (x + [fillchar] * width)[:width]
         return x
 
+#   @FIXME
+#       Refactor into support module
 def cast(current, new):
     '''Tries to force a new value into the same type as the current.'''
+    
     typ = type(current)
     if typ == bool:
         try:
@@ -452,6 +493,13 @@ def cast(current, new):
 
 
 class Cmd(cmd.Cmd):
+    #   @FIXME
+    #       Add DocString 
+    #       (this is the core class, after all!)
+    
+    
+    #   @FIXME
+    #       Refactor into a Settings class (subdivided into settable/not-settable)
     echo                = False
     case_insensitive    = True     # Commands recognized regardless of case
     continuation_prompt = '> '  
@@ -464,7 +512,7 @@ class Cmd(cmd.Cmd):
                             '@' : 'load' , 
                             '@@': '_relative_load'}
                             
-    excludeFromHistory  = '''run r list l history hi ed edit li eof'''.split()
+    excludeFromHistory  = 'run r list l history hi ed edit li eof'.split()
     default_to_shell    = False
     noSpecialParse      = 'set ed edit exit'.split()
     defaultExtension    = 'txt'         # For ``save``, ``load``, etc.
@@ -478,6 +526,9 @@ class Cmd(cmd.Cmd):
     locals_in_py        = True
     kept_state          = None
     redirector          = '>'           # for sending output to file
+    
+    #   @FIXME
+    #       Refactor into a Settings class (subdivided into settable/not-settable)
     settable            = stubbornDict('''
         prompt
         colors                Colorized output (*nix only)
@@ -533,7 +584,11 @@ class Cmd(cmd.Cmd):
     
     colors = (platform.system() != 'Windows')
     
-    def __init__(self, *args, **kwargs):        
+    def __init__(self, *args, **kwargs):     
+        #   @FIXME
+        #       Add DocString
+        #       
+        #       Describe what happens in __init__
         cmd.Cmd.__init__(self, *args, **kwargs)
         self.initial_stdout = sys.stdout
         self.history        = History()
@@ -659,6 +714,8 @@ class Cmd(cmd.Cmd):
             return stop
 
     def _default(self, statement):
+        #   @FIXME
+        #       Add DocString
         arg = statement.full_parsed_statement()
         if self.default_to_shell:
             result = os.system(arg)
@@ -667,13 +724,15 @@ class Cmd(cmd.Cmd):
         return self.postparsing_postcmd(self.default(arg))
 
     def poutput(self, msg):
-        '''Convenient shortcut for self.stdout.write(); adds newline if necessary.'''
+        '''Shortcut for self.stdout.write(); adds newline if necessary.'''
         if msg:
             self.stdout.write(msg)
             if msg[-1] is not '\n':
                 self.stdout.write('\n')
     
     def perror(self, errmsg, statement=None):
+        #   @FIXME
+        #       Add DocString
         if self.debug:
             traceback.print_exc()
         print(str(errmsg))
@@ -703,12 +762,18 @@ class Cmd(cmd.Cmd):
         return val
 
     def preparse(self, raw, **kwargs):
+        #   @FIXME
+        #       Add DocString
         return raw
     
     def postparse(self, parseResult):
+        #   @FIXME
+        #       Add DocString
         return parseResult
    
     def parsed(self, raw, **kwargs):
+        #   @FIXME
+        #       Add DocString
         if isinstance(raw, ParsedString):
             p = raw
         else:
@@ -732,13 +797,19 @@ class Cmd(cmd.Cmd):
         return p
               
     def postparsing_precmd(self, statement):
+        #   @FIXME
+        #       Add DocString
         stop = 0
         return stop, statement
     
     def postparsing_postcmd(self, stop):
+        #   @FIXME
+        #       Add DocString
         return stop
     
     def func_named(self, arg):
+        #   @FIXME
+        #       Add DocString
         result = None
         target = 'do_' + arg
         if target in dir(self):
@@ -776,8 +847,15 @@ class Cmd(cmd.Cmd):
         return stop                
         
     def onecmd_plus_hooks(self, line):
-        # The outermost level of try/finally nesting can be condensed once
-        # Python 2.4 support can be dropped.
+        #   @FIXME
+        #       Add DocString
+        
+        # The outermost level of try/finally nesting can be condensed
+        # once Python 2.4 support can be dropped.
+        #-----------------------------------------------------------
+        #   @FIXME
+        #       Python 2.4 was released in 2004. 
+        #       Think we can drop that outermost try/finally yet? :)
         stop = 0
         try:
             try:
@@ -822,6 +900,8 @@ class Cmd(cmd.Cmd):
         return statement
     
     def redirect_output(self, statement):
+        #   @FIXME
+        #       Add DocString
         if statement.parsed.pipeTo:
             self.kept_state = Statekeeper(self, ('stdout',))
             self.kept_sys   = Statekeeper(sys,  ('stdout',))
@@ -847,6 +927,8 @@ class Cmd(cmd.Cmd):
                     self.stdout.write(get_paste_buffer())
                     
     def restore_output(self, statement):
+        #   @FIXME
+        #       Add DocString
         if self.kept_state:
             if statement.parsed.output:
                 if not statement.parsed.outputTo:
@@ -861,7 +943,8 @@ class Cmd(cmd.Cmd):
             self.kept_state = None                        
                         
     def read_file_or_url(self, fname):
-        # TODO: not working on localhost
+        #   @FIXME
+        #       TODO: not working on localhost
         if isinstance(fname, file):
             result = open(fname, 'r')
         else:
@@ -879,8 +962,8 @@ class Cmd(cmd.Cmd):
         return result
         
     def pseudo_raw_input(self, prompt):
-        '''copied from cmd's cmdloop; like raw_input, but accounts for 
-        changed stdin / stdout'''
+        '''copied from cmd's cmdloop. Similar to `raw_input()`, but 
+        accounts for changed stdin / stdout'''
         
         if self.use_rawinput:
             try:
@@ -933,6 +1016,8 @@ class Cmd(cmd.Cmd):
         return result
     
     def last_matching(self, arg):
+        #   @FIXME
+        #       Add DocString
         try:
             if arg:
                 return self.history.get(arg)[-1]
@@ -942,6 +1027,8 @@ class Cmd(cmd.Cmd):
             return None        
     
     def fileimport(self, statement, source):
+        #   @FIXME
+        #       Add DocString
         try:
             f = open(os.path.expanduser(source))
         except IOError:
@@ -954,6 +1041,8 @@ class Cmd(cmd.Cmd):
     #   @FIXME
     #       Refactor into dedicated test module
     def runTranscriptTests(self, callargs):
+        #   @FIXME
+        #       Add DocString
         class TestMyAppCase(Cmd2TestCase):
             CmdApp = self.__class__        
         self.__class__.testfiles = callargs
@@ -964,16 +1053,20 @@ class Cmd(cmd.Cmd):
         result.printErrors()
 
     def run_commands_at_invocation(self, callargs):
+        #   @FIXME
+        #       Add DocString
         for initial_command in callargs:
             if self.onecmd_plus_hooks(initial_command + '\n'):
                 return self._STOP_AND_EXIT
 
     def cmdloop(self):
+        #   @FIXME
+        #       Add DocString
         parser = optparse.OptionParser()
         parser.add_option(  '-t', 
                             '--test', 
                             dest    ='test',
-                            action  ="store_true", 
+                            action  ='store_true', 
                             help    ='Test against transcript(s) in FILE (wildcards OK)')
         (callopts, callargs) = parser.parse_args()
         if callopts.test:
@@ -985,7 +1078,7 @@ class Cmd(cmd.Cmd):
     #-----------------------------------------------------
     #   COMMANDS
     #   ========
-    #   Only `do_*` commands from here till the end
+    #   Only `do_*` commands from here to the end
     #   of this class.
     #-----------------------------------------------------
     def do_cmdenvironment(self, args):
@@ -1000,6 +1093,8 @@ class Cmd(cmd.Cmd):
         )
         
     def do_help(self, arg):
+        #   @FIXME
+        #       Add DocString
         if arg:
             funcname = self.func_named(arg)
             if funcname:
@@ -1019,11 +1114,25 @@ class Cmd(cmd.Cmd):
         self.stdout.write("Single-key shortcuts for other commands:\n%s\n" % (result))
 
     def do_EOF(self, arg):
+        #   @FIXME
+        #       Add DocString
+        #       
+        #       *   should this always/never be called under 
+        #           certain circumstances?
+        #       *   error codes? (e.g., "return 0 on success, >0 on error")
+        #       *   signals? (SIGINT, SIGHUP, SIGEOF, etc.)
         return self._STOP_SCRIPT_NO_EXIT # End of script; should not exit app
     
     do_eof  = do_EOF
 
     def do_quit(self, arg):
+        #   @FIXME
+        #       Add DocString
+        #       
+        #       *   should this always/never be called under 
+        #           certain circumstances?
+        #       *   error codes? (e.g., "return 0 on success, >0 on error")
+        #       *   signals? (SIGINT, SIGHUP, SIGEOF, etc.)
         return self._STOP_AND_EXIT
     
     do_exit = do_quit
@@ -1031,8 +1140,8 @@ class Cmd(cmd.Cmd):
 
     @options([make_option(
                 '-l', '--long', 
-                action  ="store_true",
-                help    ="describe function of parameter")])    
+                action  ='store_true',
+                help    ='describe function of parameter')])
     def do_show(self, arg, opts):
         '''Shows value of a parameter.'''
         param   = arg.strip().lower()
@@ -1091,11 +1200,11 @@ class Cmd(cmd.Cmd):
             self.do_show(arg)
                 
     def do_pause(self, arg):
-        'Displays the specified text then waits for the user to press RETURN.'
+        '''Displays the specified text then waits for the user to press RETURN.'''
         raw_input(arg + '\n')
         
     def do_shell(self, arg):
-        'execute a command as if at the OS prompt.'
+        '''Execute command as if at the OS prompt.'''
         os.system(arg)
                 
     def do_py(self, arg):  
@@ -1223,6 +1332,8 @@ class Cmd(cmd.Cmd):
     
     do_edit = do_ed
     
+    #   @FIXME
+    #       Consider refactoring into parser module
     saveparser = (pyparsing.Optional(pyparsing.Word(pyparsing.nums)^'*')("idx")     + 
                   pyparsing.Optional(pyparsing.Word(legalChars + '/\\'))("fname")   +
                   pyparsing.stringEnd)
@@ -1270,6 +1381,8 @@ class Cmd(cmd.Cmd):
                                 targetname)
             self.do__load('%s %s' % (targetname, args))
     
+    #   @FIXME
+    #       Consider refactoring into parser module
     urlre = re.compile('(https?://[-\\w\\./]+)')
     
     def do_load(self, arg=None):           
@@ -1319,7 +1432,12 @@ class Cmd(cmd.Cmd):
     do_r    = do_run  
 
 
+#   @FIXME
+#       Refactor into support module 
 class HistoryItem(str):
+    #   @FIXME
+    #       Add DocString
+    
     listformat = '-------------------------[%d]\n%s\n'
     
     def __init__(self, instr):
@@ -1328,9 +1446,13 @@ class HistoryItem(str):
         self.idx        = None
     
     def pr(self):
+        #   @FIXME
+        #       Add DocString
         return self.listformat % (self.idx, str(self))
 
 
+#   @FIXME
+#       Refactor into support module 
 class History(list):
     '''A list of HistoryItems that knows how to respond to user requests.'''
     
@@ -1338,15 +1460,21 @@ class History(list):
     spanpattern     = re.compile(r'^\s*(?P<start>\-?\d+)?\s*(?P<separator>:|(\.{2,}))?\s*(?P<end>\-?\d+)?\s*$')
     
     def append(self, new):
+        #   @FIXME
+        #       Add DocString
         new     = HistoryItem(new)
         list.append(self, new)
         new.idx = len(self)
     
     def extend(self, new):
+        #   @FIXME
+        #       Add DocString
         for n in new:
             self.append(n)
         
     def get(self, getme=None, fromEnd=False):
+        #   @FIXME
+        #       Add DocString
         if not getme:
             return self
         try:
@@ -1383,6 +1511,8 @@ class History(list):
             return [itm for itm in self if isin(itm)]
     
     def search(self, target):
+        #   @FIXME
+        #       Add DocString
         target = target.strip()
         if len(target) > 1 and target[0] == target[-1] == '/':
             target  = target[1:-1]
@@ -1392,6 +1522,8 @@ class History(list):
         return [s for s in self if pattern.search(s)]
         
     def span(self, raw):
+        #   @FIXME
+        #       Add DocString
         if raw.lower() in ('*', '-', 'all'):
             raw = ':'
         results = self.spanpattern.search(raw)
@@ -1413,6 +1545,8 @@ class History(list):
         return result
                 
     def to_index(self, raw):
+        #   @FIXME
+        #       Add DocString
         if raw:
             result  = self.zero_based_index(int(raw))
         else:
@@ -1420,13 +1554,19 @@ class History(list):
         return result
     
     def zero_based_index(self, onebased):
+        #   @FIXME
+        #       Add DocString
         result  = onebased
         if result > 0:
             result -= 1
         return result
-    
 
+
+#   @FIXME
+#       Refactor into support module 
 class Statekeeper(object):
+    #   @FIXME
+    #       Add DocString
     def __init__(self, obj, attribs):
         self.obj    = obj
         self.attribs= attribs
@@ -1443,13 +1583,22 @@ class Statekeeper(object):
                 setattr(self.obj, attrib, getattr(self, attrib))        
 
 
+#   @FIXME
+#       Refactor into support module 
 class Borg(object):
     '''All instances of any Borg subclass will share state.
-    from Python Cookbook, 2nd Ed., recipe 6.16'''
-    _shared_state = {}
     
+    From Python Cookbook (2nd Edition), recipe 6.16'''
+    _shared_state = {}
+
     #   @FIXME
     #       Use new-style Metaclasses
+    #       
+    #       -- OR --
+    #
+    #       Use six.with_metaclass; @see
+    #       http://packages.python.org/six/#syntax-compatibility
+    #
     def __new__(cls, *a, **k):
         obj = object.__new__(cls, *a, **k)
         obj.__dict__ = cls._shared_state
@@ -1552,7 +1701,7 @@ class Cmd2TestCase(unittest.TestCase):
             message     = '\nFile %s, line %d\nCommand was:\n%s\nExpected:\n%s\nGot:\n%s\n'%\
                 (fname, lineNum, command, expected, result)      
             expected    = self.expectationParser.transformString(expected)
-            # checking whitespace is a pain - let's skip it
+            # checking whitespace is a pain--let's skip it
             expected    = self.anyWhitespace.sub('', expected)
             result      = self.anyWhitespace.sub('', result)
             self.assert_(re.match(expected, result, re.MULTILINE | re.DOTALL), message)
@@ -1575,9 +1724,9 @@ class Cmd2TestCase(unittest.TestCase):
                 self.transcripts[fname] = iter(tfile.readlines())
                 tfile.close()
         if not len(self.transcripts):
-            raise (StandardError,), "No test files found--nothing to test."
+            raise (StandardError,), 'No test files found; nothing to test.'
     
-    def runTest(self): # was testall
+    def runTest(self): # was `testall`
         if self.CmdApp:
             its = sorted(self.transcripts.items())
             for (fname, transcript) in its:
@@ -1596,20 +1745,20 @@ To make your application transcript-testable, replace
 
 ::
 
-  app = MyApp()
-  app.cmdloop()
+    app = MyApp()
+    app.cmdloop()
   
 with
 
 ::
 
-  app = MyApp()
-  cmd2.run(app)
+    app = MyApp()
+    cmd2.run(app)
   
 Then run a session of your application and paste the entire screen contents
 into a file, ``transcript.test``, and invoke the test like::
 
-  python myapp.py --test transcript.test
+    python myapp.py --test transcript.test
 
 Wildcards can be used to test against multiple transcript files.
 '''
