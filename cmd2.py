@@ -33,26 +33,28 @@ from __future__ import  generators,         \
 #       to simplify Python3 transition
 #from __future__ import  unicode_literals
 
-import cmd
-import re
-import os
-import sys
-import optparse
-import subprocess
-import tempfile
-import doctest
-import unittest
-import datetime
-import urllib
-import glob
-import traceback
-import platform
-import copy
+import  cmd
+import  re
+import  os
+import  sys
+import  optparse
+import  subprocess
+import  tempfile
+import  doctest
+import  unittest
+import  datetime
+import  urllib
+import  glob
+import  traceback
+import  platform
+import  copy
 
-from code       import InteractiveConsole, InteractiveInterpreter
-from optparse   import make_option
+from    code        import InteractiveConsole, InteractiveInterpreter
+from    optparse    import make_option
 
-import pyparsing
+import  pyparsing
+
+import  six
 
 __version__ = '0.6.5'
 
