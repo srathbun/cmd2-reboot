@@ -794,7 +794,7 @@ class Cmd(cmd.Cmd):
             p               = ParsedString(result.args)
             p.parsed        = result
             p.parser        = self.parsed
-        for (key, val) in kwargs.items():
+        for (key, val) in kwargs:
             p.parsed[key] = val
         return p
               
