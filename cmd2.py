@@ -24,57 +24,68 @@ written to use `self.stdout.write()`,
 
 mercurial repository at http://www.assembla.com/wiki/show/python-cmd2
 '''
+#   __future__ first
 from __future__ import  generators,         \
                         print_function,     \
                         with_statement
-
-#   @FIXME
-#       Get unicode_literals working
-#       to simplify Python3 transition
-#from __future__ import  unicode_literals
-
-import  cmd
-import  re
-import  os
-import  sys
-import  optparse
-import  subprocess
-import  tempfile
-import  doctest
-import  unittest
-import  datetime
-import  urllib
-import  glob
-import  traceback
-import  platform
-import  copy
-
-from    code        import InteractiveConsole, InteractiveInterpreter
-from    optparse    import make_option
-
-import  pyparsing
-
-import  six
+                        
+                        
+                        
 
 __version__ = '0.6.5'
 
-if sys.version_info[0] is 2:
+
+import  os
+import  platform
+import  sys
+
+import  cmd
+
+import  copy
+import  datetime
+import  glob
+import  optparse
+import  re
+import  subprocess
+import  tempfile
+import  traceback
+
+#   From:   http://packages.python.org/six/#module-six.moves
+#
+#   Note The urllib, urllib2, and urlparse modules have been combined 
+#   in the urllib package in Python 3. 
+#   
+#   six.moves doesn’t not support their renaming because their 
+#   members have been mixed across several modules in that package.
+import  urllib
+
+from    code        import InteractiveConsole,  InteractiveInterpreter
+from    optparse    import make_option
+
+import  six
+import  pyparsing
+
+#   Testing
+import  doctest
+import  unittest
+
+
+if six.PY3:
     '''
     Packrat is causing Python3 errors that I don't understand.
     
-    > /usr/local/Cellar/python3/3.2/lib/python3.2/site-packages/pyparsing-1.5.6-py3.2.egg/pyparsing.py(999)scanString()
-    -> nextLoc,tokens = parseFn( instring, preloc, callPreParse=False )
-    (Pdb) n
-    NameError: global name 'exc' is not defined
+        > /usr/local/Cellar/python3/3.2/lib/python3.2/site-packages/pyparsing-1.5.6-py3.2.egg/pyparsing.py(999)scanString()
+        -> nextLoc,tokens = parseFn( instring, preloc, callPreParse=False )
+        (Pdb) n
+        NameError: global name 'exc' is not defined
+        
+        (Pdb) parseFn
+        <bound method Or._parseCache of {Python style comment ^ C style comment}>
     
-    (Pdb) parseFn
-    <bound method Or._parseCache of {Python style comment ^ C style comment}>
-    
-    Bug report filed: https://sourceforge.net/tracker/?func=detail&atid=617311&aid=3381439&group_id=97203
+    Bug report filed: 
+        https://sourceforge.net/tracker/?func=detail&atid=617311&aid=3381439&group_id=97203
     '''
     pyparsing.ParserElement.enablePackrat()
-
-
 
 
 def remaining_args(oldArgs, newArgList):
@@ -93,10 +104,11 @@ def _attr_get_(obj, attr):
         return getattr(obj, attr)
     except AttributeError:
         return None
-    
+
 optparse.Values.get = _attr_get_
-    
+
 options_defined = [] # used to distinguish --options from SQL-style --comments
+
 
 def options(option_list, arg_desc="arg"):
     '''Used as a decorator and passed a list of optparse-style options,
@@ -113,7 +125,7 @@ def options(option_list, arg_desc="arg"):
        def do_something(self, arg, opts):
            if opts.quick:
                self.fast_button = True
-       '''
+    '''
     if not isinstance(option_list, list):
         option_list = [option_list]
     for opt in option_list:
@@ -897,11 +909,11 @@ class Cmd(cmd.Cmd):
              | a list of tuples     -> interpreted as (value, text), so 
                                        that the return value can differ from
                                        the text advertised to the user '''
-        if isinstance(options, basestring):
+        if isinstance(options, six.string_types):
             options = zip(options.split(), options.split())
         fulloptions = []
         for opt in options:
-            if isinstance(opt, basestring):
+            if isinstance(opt, six.string_types):
                 fulloptions.append((opt, opt))
             else:
                 try:
