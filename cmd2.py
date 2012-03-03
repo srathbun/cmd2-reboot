@@ -50,11 +50,11 @@ import  traceback
 
 #   From:   http://packages.python.org/six/#module-six.moves
 #
-#   Note The urllib, urllib2, and urlparse modules have been combined 
+#   "NOTE: The urllib, urllib2, and urlparse modules have been combined 
 #   in the urllib package in Python 3. 
 #   
 #   six.moves doesn’t not support their renaming because their 
-#   members have been mixed across several modules in that package.
+#   members have been mixed across several modules in that package."
 import  urllib
 
 from    code        import InteractiveConsole,  InteractiveInterpreter
@@ -89,7 +89,7 @@ if six.PY3:
 #   @FIXME
 #       Consider refactoring into parser module
 def remaining_args(oldArgs, newArgList):
-    '''Preserves argument's original spacing after the removal of options.'''
+    '''Preserves argument's original spacing after removing options.'''
     
     pattern     = '\s+'.join( re.escape(a) for a in newArgList ) + '\s*$'
     matchObj    = re.search(pattern, oldArgs)
@@ -101,10 +101,11 @@ def remaining_args(oldArgs, newArgList):
 #   @FIXME
 #       Consider using `__getattr__()` instead
 def _attr_get_(obj, attr):
-    '''Returns an attribute's value, or None (no error) if undefined.
-       Analagous to .get() for dictionaries.  Useful when checking for
-       value of options that may not have been defined on a given
-       method.'''
+    '''Returns an attribute's value (or None if undefined; no error).
+       Analagous to `.get()` for dictionaries.  
+       
+       Useful when checking for value of options that may not have 
+       been defined on a given method.'''
     try:
         return getattr(obj, attr)
     except AttributeError:
@@ -174,6 +175,7 @@ def options(option_list, arg_desc='arg'):
         new_func.__doc__ = '%s\n%s' % (func.__doc__, optionParser.format_help())
         return new_func
     return option_setup
+
 
 #   @FIXME
 #       Refactor into Error module
@@ -455,7 +457,7 @@ def replace_with_file_contents(fname):
 #   @FIXME
 #       Refactor into support module
 def ljust(x, width, fillchar=' '):
-    '''Works like str.ljust for lists'''
+    '''Works like `str.ljust()` for lists.'''
     if hasattr(x, 'ljust'):
         return x.ljust(width, fillchar)
     else:
@@ -495,7 +497,7 @@ def cast(current, new):
 class Cmd(cmd.Cmd):
     #   @FIXME
     #       Add DocString 
-    #       (this is the core class, after all!)
+    #       (This *is* the core class, after all!)
     
     
     #   @FIXME
@@ -1588,7 +1590,13 @@ class Statekeeper(object):
 class Borg(object):
     '''All instances of any Borg subclass will share state.
     
-    From Python Cookbook (2nd Edition), recipe 6.16'''
+    From Python Cookbook (2nd Edition), recipe 6.16.'''
+    
+    #   @FIXME
+    #       Edit DocString to describe where Borg is 
+    #       used in Cmd2, and where Cmd2 users may find it
+    #       useful in their subclasses.
+    
     _shared_state = {}
 
     #   @FIXME
