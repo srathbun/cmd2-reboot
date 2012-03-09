@@ -29,10 +29,6 @@ from __future__ import  generators,         \
                         print_function,     \
                         with_statement
                         
-                        
-__version__ = '0.6.5'
-
-
 import  os
 import  platform
 import  sys
@@ -66,6 +62,20 @@ import  pyparsing
 #   Testing
 import  doctest
 import  unittest
+
+
+__version__     = '0.6.5'
+__copyright__   = '?'   #@FIXME
+__license__     = '?'   #@FIXME
+__status__      = '?'   #@FIXME
+
+__author__      = 'Catherine Devlin'
+__email__       = '?'   #@FIXME
+__maintainer__  = '?'   #@FIXME
+__credits__     = '?'   #@FIXME
+
+
+
 
 
 if six.PY3:
