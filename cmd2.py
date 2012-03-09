@@ -90,7 +90,7 @@ if six.PY3:
         (Pdb) parseFn
         <bound method Or._parseCache of {Python style comment ^ C style comment}>
     
-    Bug report filed: 
+    (2011-07-28) Bug report filed: 
         https://sourceforge.net/tracker/?func=detail&atid=617311&aid=3381439&group_id=97203
     '''
     pyparsing.ParserElement.enablePackrat()
@@ -133,14 +133,17 @@ options_defined = [] # used to distinguish --options from SQL-style --comments
 #   @FIXME
 #       Consider refactoring into support module
 def options(option_list, arg_desc='arg'):
-    '''Used as a decorator and passed a list of optparse-style options,
-       alters a cmd2 method to populate its ``opts`` argument from its
-       raw text argument.
+    '''
+    Used as a decorator and passed a list of optparse-style options,
+    alters a cmd2 method to populate its ``opts`` argument from its
+    raw text argument.
 
-       Example: transform
-       def do_something(self, arg):
+    For example, transform this:
+       
+        def do_something(self, arg):
 
-       into
+    ...into this:
+    
        @options([make_option('-q', '--quick', action="store_true",
                  help="Makes things fast")],
                  "source dest")
@@ -248,10 +251,10 @@ elif sys.platform == 'darwin':
     try:
         # test for pbcopy - AFAIK, should always be installed on MacOS
         subprocess.check_call(  'pbcopy -help', 
-                                shell   =True, 
-                                stdout  =subprocess.PIPE, 
-                                stdin   =subprocess.PIPE, 
-                                stderr  =subprocess.PIPE)
+                                shell   = True, 
+                                stdout  = subprocess.PIPE, 
+                                stdin   = subprocess.PIPE, 
+                                stderr  = subprocess.PIPE)
         can_clip = True
     except (subprocess.CalledProcessError, OSError, IOError):
         pass
@@ -277,7 +280,11 @@ elif sys.platform == 'darwin':
 else:
     can_clip = False
     try:
-        subprocess.check_call('xclip -o -sel clip', shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+        subprocess.check_call(  'xclip -o -sel clip', 
+                                            shell   = True, 
+                                            stdout  = subprocess.PIPE, 
+                                            stdin   = subprocess.PIPE, 
+                                            stderr  = subprocess.PIPE)
         can_clip = True
     except AttributeError:  # check_call not defined, Python < 2.5
         try:
@@ -289,9 +296,9 @@ else:
             xclipproc.stdin.write(teststring)
             xclipproc.stdin.close()
             xclipproc   = subprocess.Popen( 'xclip -o -sel clip', 
-                                            shell   =True, 
-                                            stdout  =subprocess.PIPE, 
-                                            stdin   =subprocess.PIPE)        
+                                            shell   = True, 
+                                            stdout  = subprocess.PIPE, 
+                                            stdin   = subprocess.PIPE)        
             if xclipproc.stdout.read() == teststring:
                 can_clip = True
         except Exception: # hate a bare Exception call, but exception classes vary too much b/t stdlib versions
@@ -300,14 +307,23 @@ else:
         pass # something went wrong with xclip and we cannot use it
     if can_clip:    
         def get_paste_buffer():
-            xclipproc = subprocess.Popen('xclip -o -sel clip', shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE)
+            xclipproc = subprocess.Popen(   'xclip -o -sel clip', 
+                                            shell   = True, 
+                                            stdout  = subprocess.PIPE, 
+                                            stdin   = subprocess.PIPE)
             return xclipproc.stdout.read()
         def write_to_paste_buffer(txt):
-            xclipproc = subprocess.Popen('xclip -sel clip', shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE)
+            xclipproc = subprocess.Popen(   'xclip -sel clip', 
+                                            shell   = True, 
+                                            stdout  = subprocess.PIPE, 
+                                            stdin   = subprocess.PIPE)
             xclipproc.stdin.write(txt.encode())
             xclipproc.stdin.close()
             # but we want it in both the "primary" and "mouse" clipboards
-            xclipproc = subprocess.Popen('xclip', shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE)
+            xclipproc = subprocess.Popen(   'xclip', 
+                                            shell   = True, 
+                                            stdout  = subprocess.PIPE, 
+                                            stdin   = subprocess.PIPE)
             xclipproc.stdin.write(txt.encode())
             xclipproc.stdin.close()
     else:
@@ -340,12 +356,19 @@ class NotSettableError(Exception):
 #   @FIXME
 #       Refactor into parsing module
 class OptionParser(optparse.OptionParser):
+    #   @FIXME
+    #       Add DocString
+    
     def exit(self, status=0, msg=None):
+        #   @FIXME
+        #       Add DocString
         self.values._exit = True
         if msg:
             print(msg)
             
     def print_help(self, *args, **kwargs):
+        #   @FIXME
+        #       Add DocString
         try:
             print(self._func.__doc__)
         except AttributeError:
@@ -366,7 +389,12 @@ class OptionParser(optparse.OptionParser):
 #   @FIXME
 #       Refactor into parsing module
 class ParsedString(str):
+    #   @FIXME
+    #       Add DocString
+    
     def full_parsed_statement(self):
+        #   @FIXME
+        #       Add DocString
         new        = ParsedString('%s %s' % (self.parsed.command, 
                                              self.parsed.args))
         new.parsed = self.parsed
@@ -374,6 +402,8 @@ class ParsedString(str):
         return new       
     
     def with_args_replaced(self, newargs):
+        #   @FIXME
+        #       Add DocString
         new                          = ParsedString(newargs)
         new.parsed                   = self.parsed
         new.parser                   = self.parser
@@ -541,7 +571,8 @@ class Cmd(cmd.Cmd):
     
     #   @FIXME
     #       Refactor into a Settings class (subdivided into settable/not-settable)
-    settable            = stubbornDict('''
+    settable            = stubbornDict(
+        '''
         prompt
         colors                Colorized output (*nix only)
         continuation_prompt   On 2nd+ line of input
@@ -599,7 +630,7 @@ class Cmd(cmd.Cmd):
     def __init__(self, *args, **kwargs):     
         #   @FIXME
         #       Add DocString
-        #       
+        #   @FIXME
         #       Describe what happens in __init__
         cmd.Cmd.__init__(self, *args, **kwargs)
         self.initial_stdout = sys.stdout
@@ -974,7 +1005,7 @@ class Cmd(cmd.Cmd):
         return result
         
     def pseudo_raw_input(self, prompt):
-        '''copied from cmd's cmdloop. Similar to `raw_input()`, but 
+        '''Extracted from cmd's cmdloop. Similar to `raw_input()`, but 
         accounts for changed stdin / stdout'''
         
         if self.use_rawinput:
@@ -1315,13 +1346,16 @@ class Cmd(cmd.Cmd):
     do_li   = do_list
         
     def do_ed(self, arg):
-        '''ed: edit most recent command in text editor
+        '''
+        ed: edit most recent command in text editor
         ed [N]: edit numbered command from history
         ed [filename]: edit specified file name
         
         commands are run after editor is closed.
         "set edit (program-name)" or set  EDITOR environment variable
-        to control which editing program is used.'''
+        to control which editing program is used.
+        '''
+        
         if not self.editor:
             raise EnvironmentError("Please use 'set editor' to specify your text editing program of choice.")
         filename    = self.default_file_name
@@ -1351,12 +1385,14 @@ class Cmd(cmd.Cmd):
                   pyparsing.stringEnd)
                   
     def do_save(self, arg):
-        '''`save [N] [filename.ext]`
+        '''
+        `save [N] [filename.ext]`
 
         Saves command from history to file.
 
         | N => Number of command (from history), or `*`; 
-        |      most recent command if omitted'''
+        |      most recent command if omitted
+        '''
 
         try:
             args = self.saveparser.parseString(arg)
@@ -1383,7 +1419,8 @@ class Cmd(cmd.Cmd):
         '''
         Runs commands in script at file or URL; if this is called from within an
         already-running script, the filename will be interpreted relative to the 
-        already-running script's directory.'''
+        already-running script's directory.
+        '''
         if arg:
             arg             = arg.split(None, 1)
             targetname      = arg[0]
@@ -1428,13 +1465,14 @@ class Cmd(cmd.Cmd):
     do__load = do_load  # avoid an unfortunate legacy use of do_load from sqlpython
     
     def do_run(self, arg):
-        '''run [arg]: re-runs an earlier command
+        '''
+        run [arg]: re-runs an earlier command
         
         no arg                      -> run most recent command
         arg is integer              -> run one history item, by index
         arg is string               -> run most recent command by string search
         /arg in forward-slashes/    -> run most recent by regex
-        '''        
+        '''
         'run [N]: runs the SQL that was run N commands ago'
         runme   = self.last_matching(arg)
         self.pfeedback(runme)
@@ -1445,7 +1483,7 @@ class Cmd(cmd.Cmd):
 
 
 #   @FIXME
-#       Refactor into support module 
+#       Refactor into support module
 class HistoryItem(str):
     #   @FIXME
     #       Add DocString
@@ -1626,8 +1664,10 @@ class Borg(object):
 #   @FIXME
 #       Refactor into dedicated test module    
 class OutputTrap(Borg):
-    '''Instantiate an OutputTrap to divert/capture ALL stdout output (for unit testing).
-    Call `tearDown()` to return to normal output.'''
+    '''
+    Instantiate an OutputTrap to divert/capture ALL stdout output (for unit testing).
+    Call `tearDown()` to return to normal output.
+    '''
     def __init__(self):
         self.contents   = ''
         self.old_stdout = sys.stdout
@@ -1652,14 +1692,15 @@ class Cmd2TestCase(unittest.TestCase):
     '''Subclass this (and set CmdApp) to make a ``unittest.TestCase`` class
        that will execute the commands in a transcript file and expect the results shown.
        
-       See example.py.'''
+       See example.py.
+    '''
     
     CmdApp = None
     
-    regexPattern = pyparsing.QuotedString(  quoteChar       =r'/', 
-                                            escChar         ='\\', 
-                                            multiline       =True, 
-                                            unquoteResults  =True)
+    regexPattern = pyparsing.QuotedString(  quoteChar       = r'/', 
+                                            escChar         = '\\', 
+                                            multiline       = True, 
+                                            unquoteResults  = True)
     
     regexPattern.ignore(pyparsing.cStyleComment)
     notRegexPattern     = pyparsing.Word(pyparsing.printables)
