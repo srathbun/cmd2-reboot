@@ -7,13 +7,36 @@ from    __future__  import  generators,         \
 
 import  six
 
-import  cmd2
-from    cmd2    import  Cmd, ParsedString, remaining_args
-from    cmd2    import  (History, 
-                         HistoryItem,
-                         stubbornDict,
-                         StubbornDict)
 
+#   Cmd2 Modules
+#   --------------------------------------------------------
+import  cmd2
+from    .cmd2        import (Cmd            ,
+                            OptionParser    ,
+                            ParsedString    , 
+                            remaining_args  )
+
+from    .errors     import (EmbeddedConsoleExit ,
+                            EmptyStatement      ,
+                            NotSettableError    ,
+                            PasteBufferError)
+
+from    .parsers    import (OptionParser,
+                            ParsedString,
+                            remaining_args,
+                            options     ,
+                            options_defined)
+                            
+from    .support    import (HistoryItem ,
+                            History     ,
+                            Statekeeper ,
+                            StubbornDict,
+                            stubbornDict,
+                            cast        ,
+                            ljust       ,
+                            pastebufferr,
+                            replace_with_file_contents)
+                            
 #-------------------------------------------
 #   RESERVED:
 #   Put initialization-related 
@@ -26,7 +49,7 @@ from    cmd2    import  (History,
 #-------------------------------------------
 
 
-__all__         =   ['cmd2']
+__all__         =   ['cmd2', 'errors', 'support']
     
 __package__     =   'cmd2'
 

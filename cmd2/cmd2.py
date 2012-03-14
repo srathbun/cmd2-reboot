@@ -25,13 +25,24 @@ written to use `self.stdout.write()`,
 mercurial repository at http://www.assembla.com/wiki/show/python-cmd2
 '''
 #   __future__ first
-from __future__ import  generators,         \
-                        print_function,     \
-                        with_statement
+from    __future__  import  generators,         \
+                            print_function,     \
+                            with_statement
 
-import  os
-import  platform
-import  sys
+
+#   six: Python 2/3 Compatibility module
+#   --------------------------------------------------------
+#   Six should (after __future__) get imported first,
+#   because it deals with the different standard libraries
+#   between Python 2 and 3.
+import  six
+
+
+#   Standard Library Imports
+#   --------------------------------------------------------
+import  os,         \
+        platform,   \
+        sys
 
 import  cmd
 
@@ -53,17 +64,44 @@ import  traceback
 #   members have been mixed across several modules in that package."
 import  urllib
 
-from    code        import InteractiveConsole,  InteractiveInterpreter
-from    optparse    import make_option
+from    optparse    import  make_option
+from    code        import (InteractiveConsole  ,  
+                            InteractiveInterpreter)
 
-import  six
+
+#   Third Party Imports
+#   --------------------------------------------------------
 import  pyparsing
 
-#   Testing
-import  doctest
-import  unittest
+
+#   Cmd2 Modules
+#   --------------------------------------------------------
+from    .errors     import (EmbeddedConsoleExit ,
+                            EmptyStatement      ,
+                            NotSettableError    ,
+                            PasteBufferError)
+
+from    .parsers    import (OptionParser,
+                            ParsedString,
+                            remaining_args,
+                            options     ,
+                            options_defined)
+
+from    .support    import (HistoryItem ,
+                            History     ,
+                            Statekeeper ,
+                            StubbornDict,
+                            stubbornDict,
+                            cast        ,
+                            ljust       ,
+                            pastebufferr,
+                            replace_with_file_contents)
 
 
+
+
+#   Metadata
+#   --------------------------------------------------------
 __version__     = '0.6.5'
 __copyright__   = '?'   #@FIXME
 __license__     = '?'   #@FIXME
@@ -96,129 +134,23 @@ if six.PY3:
     pyparsing.ParserElement.enablePackrat()
 
 
-#   @FIXME
-#       Consider refactoring into parser module
-def remaining_args(oldArgs, newArgList):
-    '''Preserves argument's original spacing after removing options.'''
-    
-    pattern     = '\s+'.join( re.escape(a) for a in newArgList ) + '\s*$'
-    matchObj    = re.search(pattern, oldArgs)
-    return oldArgs[matchObj.start():]
-
 
 #   @FIXME
-#       Consider refactoring into Cmd class
-#   @FIXME
-#       Consider using `__getattr__()` instead
+#       Consider:
+#       *   refactoring into the Cmd class
+#       *   using `__getattr__()` instead
 def _attr_get_(obj, attr):
     '''Returns an attribute's value (or None if undefined; no error).
        Analagous to `.get()` for dictionaries.  
        
-       Useful when checking for value of options that may not have 
+       Useful when checking for the value of options that may not have 
        been defined on a given method.'''
     try:
         return getattr(obj, attr)
     except AttributeError:
         return None
 
-optparse.Values.get = _attr_get_
-
-
-#   @FIXME
-#       Find a more appropriate scope if possible.
-#       (i.e. less “global” than module-level.)
-options_defined = [] # used to distinguish --options from SQL-style --comments
-
-
-#   @FIXME
-#       Consider refactoring into support module
-def options(option_list, arg_desc='arg'):
-    '''
-    Used as a decorator and passed a list of optparse-style options,
-    alters a cmd2 method to populate its ``opts`` argument from its
-    raw text argument.
-
-    For example, transform this:
-       
-        def do_something(self, arg):
-
-    ...into this:
-    
-       @options([make_option('-q', '--quick', action="store_true",
-                 help="Makes things fast")],
-                 "source dest")
-       def do_something(self, arg, opts):
-           if opts.quick:
-               self.fast_button = True
-    '''
-    if not isinstance(option_list, list):
-        option_list = [option_list]
-    for opt in option_list:
-        options_defined.append(
-            pyparsing.Literal(opt.get_opt_string())
-            )
-    
-    def option_setup(func):
-        optionParser = OptionParser()
-        for opt in option_list:
-            optionParser.add_option(opt)
-        optionParser.set_usage("%s [options] %s" % ( func.__name__[3:], arg_desc) )
-        optionParser._func = func
-        
-        def new_func(instance, arg):
-            try:
-                opts, newArgList = optionParser.parse_args(arg.split())
-                # Must find the remaining args in the original argument list, but 
-                # mustn't include the command itself
-                #if hasattr(arg, 'parsed') and newArgList[0] == arg.parsed.command:
-                #    newArgList = newArgList[1:]
-                newArgs = remaining_args(arg, newArgList)
-                if isinstance(arg, ParsedString):
-                    arg = arg.with_args_replaced(newArgs)
-                else:
-                    arg = newArgs
-            except optparse.OptParseError, e:
-                print(e)
-                optionParser.print_help()
-                return
-            if hasattr(opts, '_exit'):
-                return None
-            result = func(instance, arg, opts)                            
-            return result        
-        new_func.__doc__ = '%s\n%s' % (func.__doc__, optionParser.format_help())
-        return new_func
-    return option_setup
-
-
-#   @FIXME
-#       Refactor into Error module
-class PasteBufferError(EnvironmentError):
-    if sys.platform[:3] == 'win':
-        errmsg = '''
-                    Redirecting to or from paste buffer requires pywin32
-                    to be installed on operating system.
-                    
-                    Download from: 
-                    
-                    http://sourceforge.net/projects/pywin32/'''
-    elif sys.platform[:3] == 'dar':
-        # Use built in pbcopy on Mac OSX
-        pass
-    else:
-        errmsg = '''
-                    Redirecting to or from paste buffer requires xclip 
-                    to be installed on operating system.
-                    
-                    To install on Debian/Ubuntu:
-                    
-                    ``sudo apt-get install xclip``'''        
-    def __init__(self):
-        Exception.__init__(self, self.errmsg)
-
-pastebufferr =  ''' Redirecting to or from paste buffer requires %s
-                    to be installed on operating system.
-                    %s
-                '''
+optparse.Values.get = _attr_get_    #   _attr_get_()'s only use
 
 
 #   @FIXME
@@ -275,7 +207,7 @@ elif sys.platform == 'darwin':
             pbcopyproc.communicate(txt.encode())
     else:
         def get_paste_buffer(*args):
-            raise OSError, pastebufferr % ('pbcopy', 'On MacOS X - error should not occur - part of the default installation')
+            raise OSError, pastebufferr % ('pbcopy', 'Error should not occur on OS X; part of the default installation')
         write_to_paste_buffer = get_paste_buffer
 else:
     can_clip = False
@@ -335,204 +267,6 @@ else:
 pyparsing.ParserElement.setDefaultWhitespaceChars(' \t')
 
 
-#   @FIXME
-#       Refactor into error module
-class EmbeddedConsoleExit(SystemExit):
-    pass
-
-
-#   @FIXME
-#       Refactor into error module
-class EmptyStatement(Exception):
-    pass
-
-
-#   @FIXME
-#       Refactor into error module
-class NotSettableError(Exception):
-    pass
-
-
-#   @FIXME
-#       Refactor into parsing module
-class OptionParser(optparse.OptionParser):
-    #   @FIXME
-    #       Add DocString
-    
-    def exit(self, status=0, msg=None):
-        #   @FIXME
-        #       Add DocString
-        self.values._exit = True
-        if msg:
-            print(msg)
-            
-    def print_help(self, *args, **kwargs):
-        #   @FIXME
-        #       Add DocString
-        try:
-            print(self._func.__doc__)
-        except AttributeError:
-            pass
-        optparse.OptionParser.print_help(self, *args, **kwargs)
-
-    def error(self, msg):
-        '''error(msg : string)
-
-        Print a usage message incorporating 'msg' to stderr and exit.
-        
-        If you override this in a subclass, it should NOT return!
-        It should exit, or raise an exception.
-        '''
-        raise optparse.OptParseError(msg)
-
-
-#   @FIXME
-#       Refactor into parsing module
-class ParsedString(str):
-    #   @FIXME
-    #       Add DocString
-    
-    def full_parsed_statement(self):
-        #   @FIXME
-        #       Add DocString
-        new        = ParsedString('%s %s' % (self.parsed.command, 
-                                             self.parsed.args))
-        new.parsed = self.parsed
-        new.parser = self.parser
-        return new       
-    
-    def with_args_replaced(self, newargs):
-        #   @FIXME
-        #       Add DocString
-        new                          = ParsedString(newargs)
-        new.parsed                   = self.parsed
-        new.parser                   = self.parser
-        new.parsed['args']           = newargs
-        new.parsed.statement['args'] = newargs
-        return new
-
-
-#   @FIXME
-#       Refactor into support module
-class StubbornDict(dict):
-    '''Dictionary that tolerates many input formats.
-    Create it with stubbornDict(arg) factory function.
-    '''    
-    def __iadd__(self, other):
-        self.update(other)
-        return self
-    
-    def __add__(self, other):
-        selfcopy = copy.copy(self)
-        selfcopy.update(stubbornDict(other))
-        return selfcopy
-    
-    def __radd__(self, other):
-        return self.__add__(other)
-        
-    def update(self, other):
-        dict.update(self, StubbornDict.to_dict(other))
-    
-    append = update
-    
-    @classmethod
-    def to_dict(cls, arg):
-        '''Generates dictionary from a string or list of strings.'''
-        result = {}
-        
-        if hasattr(arg, 'splitlines'):
-            arg = arg.splitlines()
-        
-        #if isinstance(arg, list):
-        if hasattr(arg, '__reversed__'):    
-            for a in arg:
-                if not isinstance(a, str):
-                    raise TypeError, "A list arguments to `to_dict()` must only contain strings!" 
-                    
-                a = a.strip()
-                
-                if a:
-                    key_val = a.split(None, 1)
-                    key     = key_val[0]
-                    
-                    # print()
-#                     print('{', key, ':', key_val, '}')
-#                     print()
-                    
-                    if len( key_val ) > 1:
-                        val = key_val[1]
-                    else:
-                        val = ''
-                    result[key] = val
-        else:
-            result = arg
-            
-        return result
-
-#   @FIXME
-#       Refactor into support module
-def stubbornDict(*arg, **kwarg):
-    #   @FIXME
-    #       Add DocString
-    result = {}
-    for a in arg:
-        result.update(StubbornDict.to_dict(a))
-    result.update(kwarg)                      
-    return StubbornDict(result)
-
-#   @FIXME
-#       Refactor into support module
-def replace_with_file_contents(fname):
-    #   @FIXME
-    #       Add DocString
-    if fname:
-        try:
-            result = open(os.path.expanduser(fname[0])).read()
-        except IOError:
-            result = '< %s' % fname[0]  # wasn't a file after all
-    else:
-        result = get_paste_buffer()
-    return result      
-
-#   @FIXME
-#       Refactor into support module
-def ljust(x, width, fillchar=' '):
-    '''Works like `str.ljust()` for lists.'''
-    if hasattr(x, 'ljust'):
-        return x.ljust(width, fillchar)
-    else:
-        if len(x) < width:
-            x = (x + [fillchar] * width)[:width]
-        return x
-
-#   @FIXME
-#       Refactor into support module
-def cast(current, new):
-    '''Tries to force a new value into the same type as the current.'''
-    
-    typ = type(current)
-    if typ == bool:
-        try:
-            return bool(int(new))
-        except (ValueError, TypeError):
-            pass
-        try:
-            new = new.lower()    
-        except:
-            pass
-        if (new == 'on')  or (new[0] in ('y','t')):
-            return True
-        if (new == 'off') or (new[0] in ('n','f')):
-            return False
-    else:
-        try:
-            return typ(new)
-        except:
-            pass
-    print("Problem setting parameter (now %s) to %s; incorrect type?" 
-            % (current, new))
-    return current
-
 
 class Cmd(cmd.Cmd):
     #   @FIXME
@@ -590,8 +324,8 @@ class Cmd(cmd.Cmd):
     #   ************************************
     #   End "original" variable declarations
     #   ************************************
-    #   (After this, variables were grouped here
-    #   from various places within the class.)
+    #   Starting here, variables were collected
+    #   together from various places within the class.
     
     _STOP_AND_EXIT       = True # distinguish end of script file from actual exit
     _STOP_SCRIPT_NO_EXIT = -999
@@ -652,6 +386,9 @@ class Cmd(cmd.Cmd):
         pipe                    = pyparsing.Keyword('|', identChars='|')
         self.commentGrammars.ignore(pyparsing.quotedString).setParseAction(lambda x: '')
         doNotParse              = self.commentGrammars | self.commentInProgress | pyparsing.quotedString
+        
+        #   moved here from class-level variable
+        self.urlre = re.compile('(https?://[-\\w\\./]+)')
         
         #outputParser = (pyparsing.Literal('>>') | (pyparsing.WordStart() + '>') | pyparsing.Regex('[^=]>'))('output')
         outputParser = (pyparsing.Literal(   2 * self.redirector) | \
@@ -767,7 +504,7 @@ class Cmd(cmd.Cmd):
         return self.postparsing_postcmd(self.default(arg))
 
     def poutput(self, msg):
-        '''Shortcut for self.stdout.write(); adds newline if necessary.'''
+        '''Shortcut for self.stdout.write() (adds newline if necessary).'''
         if msg:
             self.stdout.write(msg)
             if msg[-1] is not '\n':
@@ -850,6 +587,8 @@ class Cmd(cmd.Cmd):
         #       Add DocString
         return stop
     
+    #   @FIXME
+    #       Shouldn't this method start with an underscore?
     def func_named(self, arg):
         #   @FIXME
         #       Add DocString
@@ -1081,20 +820,6 @@ class Cmd(cmd.Cmd):
         f.close()
         return data
 
-    #   @FIXME
-    #       Refactor into dedicated test module
-    def runTranscriptTests(self, callargs):
-        #   @FIXME
-        #       Add DocString
-        class TestMyAppCase(Cmd2TestCase):
-            CmdApp = self.__class__        
-        self.__class__.testfiles = callargs
-        sys.argv    = [sys.argv[0]] # the --test argument upsets unittest.main()
-        testcase    = TestMyAppCase()
-        runner      = unittest.TextTestRunner()
-        result      = runner.run(testcase)
-        result.printErrors()
-
     def run_commands_at_invocation(self, callargs):
         #   @FIXME
         #       Add DocString
@@ -1117,16 +842,17 @@ class Cmd(cmd.Cmd):
         else:
             if not self.run_commands_at_invocation(callargs):
                 self._cmdloop() 
-                
+         
+         
     #-----------------------------------------------------
     #   COMMANDS
     #   ========
     #   Only `do_*` commands from here to the end
-    #   of this class.
+    #   of the class.
     #-----------------------------------------------------
     def do_cmdenvironment(self, args):
         '''Summary report of interactive parameters.'''
-        self.stdout.write('''
+        self.poutput('''
             Commands are %(casesensitive)scase-sensitive.
             Commands may be terminated with: %(terminators)s
             Settable parameters: %(settable)s\n''' % { 
@@ -1430,10 +1156,6 @@ class Cmd(cmd.Cmd):
                                 targetname)
             self.do__load('%s %s' % (targetname, args))
     
-    #   @FIXME
-    #       Consider refactoring into parser module
-    urlre = re.compile('(https?://[-\\w\\./]+)')
-    
     def do_load(self, arg=None):           
         '''Runs script of command(s) from a file or URL.'''
         if arg is None:
@@ -1482,328 +1204,12 @@ class Cmd(cmd.Cmd):
     do_r    = do_run  
 
 
-#   @FIXME
-#       Refactor into support module
-class HistoryItem(str):
-    #   @FIXME
-    #       Add DocString
-    
-    listformat = '-------------------------[%d]\n%s\n'
-    
-    def __init__(self, instr):
-        str.__init__(self)
-        self.lowercase  = self.lower()
-        self.idx        = None
-    
-    def pr(self):
-        #   @FIXME
-        #       Add DocString
-        return self.listformat % (self.idx, str(self))
 
 
 #   @FIXME
-#       Refactor into support module 
-class History(list):
-    '''A list of HistoryItems that knows how to respond to user requests.'''
-    
-    rangePattern    = re.compile(r'^\s*(?P<start>[\d]+)?\s*\-\s*(?P<end>[\d]+)?\s*$')
-    spanpattern     = re.compile(r'^\s*(?P<start>\-?\d+)?\s*(?P<separator>:|(\.{2,}))?\s*(?P<end>\-?\d+)?\s*$')
-    
-    def append(self, new):
-        #   @FIXME
-        #       Add DocString
-        new     = HistoryItem(new)
-        list.append(self, new)
-        new.idx = len(self)
-    
-    def extend(self, new):
-        #   @FIXME
-        #       Add DocString
-        for n in new:
-            self.append(n)
-        
-    def get(self, getme=None, fromEnd=False):
-        #   @FIXME
-        #       Add DocString
-        if not getme:
-            return self
-        try:
-            getme = int(getme)
-            if getme < 0:
-                return self[:(-1 * getme)]
-            else:
-                return [self[getme-1]]
-        except IndexError:
-            return []
-        except ValueError:
-            rangeResult = self.rangePattern.search(getme)
-            if rangeResult:
-                start       = rangeResult.group('start') or None
-                end         = rangeResult.group('start') or None
-                if start:
-                    start   = int(start) - 1
-                if end:
-                    end     = int(end)
-                return self[start:end]
-                
-            getme = getme.strip()
-
-            if getme.startswith(r'/') and getme.endswith(r'/'):
-                finder = re.compile(    getme[1:-1], 
-                                        re.DOTALL    | 
-                                        re.MULTILINE | 
-                                        re.IGNORECASE)
-                def isin(hi):
-                    return finder.search(hi)
-            else:
-                def isin(hi):
-                    return (getme.lower() in hi.lowercase)
-            return [itm for itm in self if isin(itm)]
-    
-    def search(self, target):
-        #   @FIXME
-        #       Add DocString
-        target = target.strip()
-        if len(target) > 1 and target[0] == target[-1] == '/':
-            target  = target[1:-1]
-        else:
-            target  = re.escape(target)
-        pattern = re.compile(target, re.IGNORECASE)
-        return [s for s in self if pattern.search(s)]
-        
-    def span(self, raw):
-        #   @FIXME
-        #       Add DocString
-        if raw.lower() in ('*', '-', 'all'):
-            raw = ':'
-        results = self.spanpattern.search(raw)
-        if not results:
-            raise IndexError
-        if not results.group('separator'):
-            return [self[self.to_index(results.group('start'))]]
-        start   = self.to_index(results.group('start'))
-        end     = self.to_index(results.group('end'))
-        reverse = False
-        if end is not None:
-            if end < start:
-                (start, end) = (end, start)
-                reverse = True
-            end += 1
-        result = self[start:end]
-        if reverse:
-            result.reverse()
-        return result
-                
-    def to_index(self, raw):
-        #   @FIXME
-        #       Add DocString
-        if raw:
-            result  = self.zero_based_index(int(raw))
-        else:
-            result  = None
-        return result
-    
-    def zero_based_index(self, onebased):
-        #   @FIXME
-        #       Add DocString
-        result  = onebased
-        if result > 0:
-            result -= 1
-        return result
-
-
-#   @FIXME
-#       Refactor into support module 
-class Statekeeper(object):
-    #   @FIXME
-    #       Add DocString
-    def __init__(self, obj, attribs):
-        self.obj    = obj
-        self.attribs= attribs
-        if self.obj:
-            self.save()
-    
-    def save(self):
-        for attrib in self.attribs:
-            setattr(self, attrib, getattr(self.obj, attrib))
-    
-    def restore(self):
-        if self.obj:
-            for attrib in self.attribs:
-                setattr(self.obj, attrib, getattr(self, attrib))        
-
-
-#   @FIXME
-#       Refactor into support module 
-class Borg(object):
-    '''All instances of any Borg subclass will share state.
-    
-    From Python Cookbook (2nd Edition), recipe 6.16.'''
-    
-    #   @FIXME
-    #       Edit DocString to describe where Borg is 
-    #       used in Cmd2, and where Cmd2 users may find it
-    #       useful in their subclasses.
-    
-    _shared_state = {}
-
-    #   @FIXME
-    #       Use new-style Metaclasses
-    #       
-    #       -- OR --
-    #
-    #       Use six.with_metaclass; @see
-    #       http://packages.python.org/six/#syntax-compatibility
-    #
-    def __new__(cls, *a, **k):
-        obj = object.__new__(cls, *a, **k)
-        obj.__dict__ = cls._shared_state
-        return obj
-
-
-#   @FIXME
-#       Refactor into dedicated test module    
-class OutputTrap(Borg):
-    '''
-    Instantiate an OutputTrap to divert/capture ALL stdout output (for unit testing).
-    Call `tearDown()` to return to normal output.
-    '''
-    def __init__(self):
-        self.contents   = ''
-        self.old_stdout = sys.stdout
-        sys.stdout      = self
-        
-    def tearDown(self):
-        sys.stdout      = self.old_stdout
-        self.contents   = ''
-    
-    def read(self):
-        result          = self.contents
-        self.contents   = ''
-        return result
-        
-    def write(self, txt):
-        self.contents   += txt
-
-
-#   @FIXME
-#       Refactor into dedicated test module        
-class Cmd2TestCase(unittest.TestCase):
-    '''Subclass this (and set CmdApp) to make a ``unittest.TestCase`` class
-       that will execute the commands in a transcript file and expect the results shown.
-       
-       See example.py.
-    '''
-    
-    CmdApp = None
-    
-    regexPattern = pyparsing.QuotedString(  quoteChar       = r'/', 
-                                            escChar         = '\\', 
-                                            multiline       = True, 
-                                            unquoteResults  = True)
-    
-    regexPattern.ignore(pyparsing.cStyleComment)
-    notRegexPattern     = pyparsing.Word(pyparsing.printables)
-    notRegexPattern.setParseAction(lambda t: re.escape(t[0]))
-    expectationParser   = regexPattern | notRegexPattern
-    anyWhitespace       = re.compile(r'\s', re.DOTALL | re.MULTILINE)
-    
-    def _test_transcript(self, fname, transcript):
-        #   @FIXME 
-        #       Add DocString
-        lineNum     = 0
-        finished    = False
-        line        = transcript.next()
-        lineNum     += 1
-        tests_run   = 0
-        while not finished:
-            # Scroll forward to where actual commands begin
-            while not line.startswith(self.cmdapp.prompt):
-                try:
-                    line = transcript.next()
-                except StopIteration:
-                    finished = True
-                    break
-                lineNum += 1
-            command = [line[len(self.cmdapp.prompt):]]
-            line    = transcript.next()
-            # Read the entirety of a multi-line command
-            while line.startswith(self.cmdapp.continuation_prompt):
-                command.append(line[len(self.cmdapp.continuation_prompt):])
-                try:
-                    line = transcript.next()
-                except StopIteration:
-                    raise (StopIteration, 
-                           'Transcript broke off while reading command beginning at line %d with\n%s' 
-                           % (command[0]))
-                lineNum += 1
-            command = ''.join(command)               
-            # Send the command into the application and capture the resulting output
-            stop    = self.cmdapp.onecmd_plus_hooks(command)
-            #TODO: should act on ``stop``
-            result  = self.outputTrap.read()
-            # Read the expected result from transcript
-            if line.startswith(self.cmdapp.prompt):
-                message = '\nFile %s, line %d\nCommand was:\n%s\nExpected: (nothing)\nGot:\n%s\n'%\
-                    (fname, lineNum, command, result)     
-                self.assert_(not(result.strip()), message)
-                continue
-            expected = []
-            while not line.startswith(self.cmdapp.prompt):
-                expected.append(line)
-                try:
-                    line    = transcript.next()
-                except StopIteration:
-                    finished= True                       
-                    break
-                lineNum     += 1
-            expected = ''.join(expected)
-            # Compare actual result to expected
-            message     = '\nFile %s, line %d\nCommand was:\n%s\nExpected:\n%s\nGot:\n%s\n'%\
-                (fname, lineNum, command, expected, result)      
-            expected    = self.expectationParser.transformString(expected)
-            # checking whitespace is a pain--let's skip it
-            expected    = self.anyWhitespace.sub('', expected)
-            result      = self.anyWhitespace.sub('', result)
-            self.assert_(re.match(expected, result, re.MULTILINE | re.DOTALL), message)
-    
-    def setUp(self):
-        #   @FIXME 
-        #       Add DocString
-        if self.CmdApp:
-            self.outputTrap = OutputTrap()
-            self.cmdapp     = self.CmdApp()
-            self.fetchTranscripts()
-    
-    def tearDown(self):
-        #   @FIXME 
-        #       Add DocString
-        if self.CmdApp:
-            self.outputTrap.tearDown()
-            
-    def fetchTranscripts(self):
-        #   @FIXME 
-        #       Add DocString
-        self.transcripts = {}
-        for fileset in self.CmdApp.testfiles:
-            for fname in glob.glob(fileset):
-                tfile = open(fname)
-                self.transcripts[fname] = iter(tfile.readlines())
-                tfile.close()
-        if not len(self.transcripts):
-            raise (StandardError,), 'No test files found; nothing to test.'
-    
-    def runTest(self): # was `testall`
-        #   @FIXME 
-        #       Add DocString
-        if self.CmdApp:
-            its = sorted(self.transcripts.items())
-            for (fname, transcript) in its:
-                self._test_transcript(fname, transcript)
-
-
-
-
+#       Since DocTests have been refactored into separate files,
+#       and superceeded by PyVows for testing,
+#       what might be a good purpose for this codeblock instead?
 if __name__ == '__main__':
     doctest.testmod(optionflags = doctest.NORMALIZE_WHITESPACE)
 

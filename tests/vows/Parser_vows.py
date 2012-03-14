@@ -12,6 +12,7 @@
 #   Convenience, forward-compatibility
 from __future__ import  generators,         \
                         print_function
+
 import collections
 # try:
 #     import six  #   single-source Python 2/3 helper
@@ -27,8 +28,10 @@ from    pyvows  import (Vows, expect)
 
 import  pyparsing
 
-import  cmd2
-from    cmd2    import Cmd, ParsedString, remaining_args
+from    cmd2        import  *
+from    cmd2.cmd2   import  Cmd,            \
+                            ParsedString,   \
+                            remaining_args
 
 
 ###     END IMPORTS     ###
@@ -39,8 +42,9 @@ from    cmd2    import Cmd, ParsedString, remaining_args
 #===================================================================
 
 
-#   This is a utility function for use in tests below.
+
 def parsed_input(input, topic):
+    #   Utility function for use in tests below.
     output = topic.parser.parseString(input).dump()
     return output
 

@@ -1,10 +1,19 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
 '''A sample application for cmd2.'''
 
+
+#   __future__ first
+from    __future__  import  generators,         \
+                            print_function,     \
+                            with_statement
+
+from    optparse    import  make_option
+from    cmd2 import *
+
 from    cmd2 import Cmd,        \
-                    make_option,\
                     options
 
-import  unittest, optparse, sys
 
 class CmdLineApp(Cmd):
     multilineCommands = ['orate']
@@ -13,12 +22,12 @@ class CmdLineApp(Cmd):
     redirector = '->'
     Cmd.settable.append('maxrepeats   Max number of `--repeat`s allowed')
 
-    @options([make_option('-p', '--piglatin',   action="store_true", help="atinLay"),
-              make_option('-s', '--shout',      action="store_true", help="N00B EMULATION MODE"),
-              make_option('-r', '--repeat',     type="int",          help="output [n] times")
+    @options([make_option('-p', '--piglatin',   action='store_true', help='atinLay'),
+              make_option('-s', '--shout',      action='store_true', help='N00B EMULATION MODE'),
+              make_option('-r', '--repeat',     type='int',          help='output [n] times')
              ], arg_desc = '(text to say)')
     def do_speak(self, arg, opts=None):
-        """Repeats what you tell me to."""
+        '''Repeats what you tell me to.'''
         arg = ''.join(arg)
         if opts.piglatin:
             arg = '%s%say' % (arg[1:].rstrip(), arg[0])
