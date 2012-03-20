@@ -23,6 +23,10 @@ import  six
 import  sys,        \
         traceback
 
+__all__         =   [   'EmbeddedConsoleExit',
+                        'EmptyStatement',
+                        'NotSettableError',
+                        'PasteBufferError']
 
 __version__     = '0.6.5'
 __copyright__   = '?'   #@FIXME
