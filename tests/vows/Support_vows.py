@@ -31,14 +31,22 @@ import collections
 from    pyvows  import (Vows, expect)
 
 from    cmd2            import  *
+
+from    cmd2.errors     import (EmbeddedConsoleExit ,
+                                EmptyStatement      ,
+                                NotSettableError    ,
+                                PasteBufferError    ,
+                                pastebufferr)
+                                
 from    cmd2.support    import (HistoryItem ,
                                 History     ,
+                                Settings    ,
                                 Statekeeper ,
                                 StubbornDict,
                                 stubbornDict,
                                 cast        ,
-                                ljust       ,
-                                pastebufferr)
+                                ljust       )
+
 
 
 ###     END IMPORTS     ###

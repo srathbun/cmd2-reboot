@@ -79,7 +79,8 @@ import  pyparsing
 from    .errors     import (EmbeddedConsoleExit ,
                             EmptyStatement      ,
                             NotSettableError    ,
-                            PasteBufferError)
+                            PasteBufferError    ,
+                            pastebufferr)
 
 from    .parsers    import (OptionParser,
                             ParsedString,
@@ -94,7 +95,6 @@ from    .support    import (HistoryItem ,
                             stubbornDict,
                             cast        ,
                             ljust       ,
-                            pastebufferr,
                             replace_with_file_contents)
 
 
@@ -150,7 +150,7 @@ def _attr_get_(obj, attr):
     except AttributeError:
         return None
 
-optparse.Values.get = _attr_get_    #   _attr_get_()'s only use
+optparse.Values.get = _attr_get_    #   this is the only use of _attr_get_()
 
 
 #   @FIXME
@@ -446,6 +446,7 @@ class Cmd(cmd.Cmd):
         self.settings.settable.union(
             ' '.split('abbrev case_insensitive colors continuation_prompt debug default_file_name echo editor feedback_to_output prompt quiet timing')
             )
+        
 
         self._init_parser()
         
@@ -1289,8 +1290,6 @@ class Cmd(cmd.Cmd):
             stop    = self.onecmd_plus_hooks(runme)
     
     do_r    = do_run  
-
-
 
 
 #   @FIXME

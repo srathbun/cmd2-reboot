@@ -26,7 +26,8 @@ import  sys,        \
 __all__         =   [   'EmbeddedConsoleExit',
                         'EmptyStatement',
                         'NotSettableError',
-                        'PasteBufferError']
+                        'PasteBufferError',
+                        'pastebufferr']
 
 __version__     = '0.6.5'
 __copyright__   = '?'   #@FIXME
@@ -38,6 +39,11 @@ __email__       = '?'   #@FIXME
 __maintainer__  = '?'   #@FIXME
 __credits__     = '?'   #@FIXME
 
+
+pastebufferr =  ''' Redirecting to or from paste buffer requires %s
+                    to be installed on operating system.
+                    %s
+                '''
 
 class EmbeddedConsoleExit(SystemExit):
     #   @FIXME

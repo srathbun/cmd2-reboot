@@ -292,12 +292,6 @@ def ljust(x, width, fillchar=' '):
         return x
 
 
-pastebufferr =  ''' Redirecting to or from paste buffer requires %s
-                    to be installed on operating system.
-                    %s
-                '''
-
-
 def replace_with_file_contents(fname):
     #   @FIXME
     #       Add DocString

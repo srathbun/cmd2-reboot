@@ -15,7 +15,8 @@ import  cmd2
 from    .errors     import (EmbeddedConsoleExit ,
                             EmptyStatement      ,
                             NotSettableError    ,
-                            PasteBufferError)
+                            PasteBufferError    ,
+                            pastebufferr)
 
 from    .parsers    import (OptionParser,
                             ParsedString,
@@ -30,7 +31,6 @@ from    .support    import (HistoryItem ,
                             stubbornDict,
                             cast        ,
                             ljust       ,
-                            pastebufferr,
                             replace_with_file_contents)
                             
 #-------------------------------------------
