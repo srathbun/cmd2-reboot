@@ -264,6 +264,9 @@ else:
         write_to_paste_buffer = get_paste_buffer
 
 
+#   @FIXME
+#       Move to parsers module...without breaking
+#       any code in this file
 pyparsing.ParserElement.setDefaultWhitespaceChars(' \t')
 
 
@@ -361,7 +364,22 @@ class Cmd(cmd.Cmd):
     
     colors = (platform.system() != 'Windows')
     
-    def __init__(self, *args, **kwargs):     
+    
+    #   @FIXME
+    #       Refactor this settings block into 
+    #       parser module
+    prefixParser        = pyparsing.Empty()
+    commentGrammars     = pyparsing.Or([pyparsing.pythonStyleComment, 
+                                        pyparsing.cStyleComment])
+    commentGrammars.addParseAction(lambda x: '')
+    commentInProgress   =   pyparsing.Literal('/*') + \
+                            pyparsing.SkipTo(pyparsing.stringEnd ^ '*/')
+    terminators         = [';']
+    blankLinesAllowed   = False
+    multilineCommands   = []
+    
+    
+    def __init__(self, *args, **kwargs):
         #   @FIXME
         #       Add DocString
         #   @FIXME
@@ -370,11 +388,77 @@ class Cmd(cmd.Cmd):
         self.initial_stdout = sys.stdout
         self.history        = History()
         self.pystate        = {}
+        
         self.shortcuts      = sorted(self.shortcuts.items(), reverse=True)
-        self.keywords       = self.reserved_words + [fname[3:] for fname in dir(self) 
-                                                                if fname.startswith('do_')]            
+        self.keywords       = self.reserved_words   + \
+                                [fname[3:]  for fname in dir(self) 
+                                 if fname.startswith('do_')]
+                                 
+        self.saveparser = ( pyparsing.Optional(pyparsing.Word(pyparsing.nums)^'*')("idx")     + 
+                            pyparsing.Optional(pyparsing.Word(self.settings['legalChars'] + '/\\'))("fname")   +
+                            pyparsing.stringEnd)
+        
+#         self.settings_from_cmd = frozenset({
+#                                     'doc_header',
+#                                     'doc_leader',
+#                                     'identchars',
+#                                     'intro',
+#                                     'lastcmd',
+#                                     'misc_header',
+#                                     'nohelp',
+#                                     'prompt',
+#                                     'ruler',
+#                                     'undoc_header',
+#                                     'use_rawinput'})
+#         
+#         self.settings_from_cmd2 = ( 'abbrev',
+#                                     'case_insensitive',
+#                                     'continuation_prompt',
+#                                     'current_script_dir',
+#                                     'debug',
+#                                     'default_file_name',
+#                                     'default_to_shell',
+#                                     'defaultExtension',
+#                                     'echo',
+#                                     'excludeFromHistory',
+#                                     'feedback_to_output',
+#                                     'kept_state',
+#                                     'legalChars',
+#                                     'locals_in_py',
+#                                     'noSpecialParse',
+#                                     'quiet',
+#                                     'redirector',
+#                                     'reserved_words',
+#                                     'shortcuts',
+#                                     'timing')
+# 
+#         self.settings_for_parsing = ('abbrev',
+#                                      'case_insensitive',
+#                                      'default_to_shell',
+#                                      'legalChars',
+#                                      'locals_in_py',
+#                                      'noSpecialParse',
+#                                      'redirector',
+#                                      'reserved_words',
+#                                      'shortcuts')
+                                     
+        self.settings       = Settings()
+        self.settings.settable.union(
+            ' '.split('abbrev case_insensitive colors continuation_prompt debug default_file_name echo editor feedback_to_output prompt quiet timing')
+            )
+
         self._init_parser()
-            
+        
+    
+    def __getattr__(self, name):
+        #   Only called when attr not found
+        #   in the usual places
+        #print("\n" + 'CALLING __getattr__({})'.format( name ) + "\n")
+        return self.settings[name]
+        
+    
+    #   @FIXME
+    #       Refactor into parser module
     def _init_parser(self):
         #   @FIXME
         #       Add docstring
@@ -551,6 +635,8 @@ class Cmd(cmd.Cmd):
         #       Add DocString
         return parseResult
    
+    #   @FIXME
+    #       Refactor into parser module
     def parsed(self, raw, **kwargs):
         #   @FIXME
         #       Add DocString
@@ -666,7 +752,12 @@ class Cmd(cmd.Cmd):
             return self.postparsing_postcmd(stop)        
     
     def complete_statement(self, line):
-        '''Keep accepting lines of input until the command is complete.'''
+        '''
+        Keep accepting lines of input until the command is complete.
+        '''
+        #   @FIXME
+        #       How is this different from Cmd.complete_statement() ?
+        
         if (not line) or (
             not pyparsing.Or(self.commentGrammars).
                 setParseAction(lambda x: '').transformString(line)):
@@ -863,7 +954,8 @@ class Cmd(cmd.Cmd):
         
     def do_help(self, arg):
         #   @FIXME
-        #       Add DocString
+        #       Add DocString 
+        #       (How is this different from Cmd.do_help() ?)
         if arg:
             funcname = self.func_named(arg)
             if funcname:
@@ -933,7 +1025,8 @@ class Cmd(cmd.Cmd):
         '''
         Sets a cmd2 parameter.  Accepts abbreviated parameter names so long
         as there is no ambiguity.  Call without arguments for a list of 
-        settable parameters with their values.'''
+        settable parameters with their values.
+        '''
         try:
             statement, \
             paramName, \
@@ -966,7 +1059,7 @@ class Cmd(cmd.Cmd):
                 except AttributeError:
                     pass
         except (ValueError, AttributeError, NotSettableError), e:
-            self.do_show(arg)
+            self.do_show( arg )
                 
     def do_pause(self, arg):
         '''Displays the specified text then waits for the user to press RETURN.'''
@@ -1103,12 +1196,6 @@ class Cmd(cmd.Cmd):
         self.do__load(filename)
     
     do_edit = do_ed
-    
-    #   @FIXME
-    #       Consider refactoring into parser module
-    saveparser = (pyparsing.Optional(pyparsing.Word(pyparsing.nums)^'*')("idx")     + 
-                  pyparsing.Optional(pyparsing.Word(legalChars + '/\\'))("fname")   +
-                  pyparsing.stringEnd)
                   
     def do_save(self, arg):
         '''

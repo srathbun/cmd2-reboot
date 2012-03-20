@@ -51,7 +51,8 @@ class OptionParser(optparse.OptionParser):
         optparse.OptionParser.print_help(self, *args, **kwargs)
 
     def error(self, msg):
-        '''error(msg : string)
+        '''
+        error(msg : string)
 
         Print a usage message incorporating 'msg' to stderr and exit.
         

@@ -11,10 +11,6 @@ import  six
 #   Cmd2 Modules
 #   --------------------------------------------------------
 import  cmd2
-from    .cmd2        import (Cmd            ,
-                            OptionParser    ,
-                            ParsedString    , 
-                            remaining_args  )
 
 from    .errors     import (EmbeddedConsoleExit ,
                             EmptyStatement      ,
@@ -26,7 +22,7 @@ from    .parsers    import (OptionParser,
                             remaining_args,
                             options     ,
                             options_defined)
-                            
+
 from    .support    import (HistoryItem ,
                             History     ,
                             Statekeeper ,
@@ -53,13 +49,13 @@ __all__         =   ['cmd2', 'errors', 'support']
     
 __package__     =   'cmd2'
 
-__version__     = '0.6.5'
-__copyright__   = '?'           #@FIXME
-__license__     = '?'           #@FIXME
-__status__      = '4 - Beta'
-
-__author__      = 'Catherine Devlin'
-__email__       = 'catherine.devlin@gmail.com'
-__maintainer__  = '?'           #@FIXME
-__credits__     = '?'           #@FIXME
+__version__     =   '0.6.5'
+__copyright__   =   '?'           #@FIXME
+__license__     =   '?'           #@FIXME
+__status__      =   '4 - Beta'
+  
+__author__      =   'Catherine Devlin'
+__email__       =   'catherine.devlin@gmail.com'
+__maintainer__  =   '?'           #@FIXME
+__credits__     =   '?'           #@FIXME
 

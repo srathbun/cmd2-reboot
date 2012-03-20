@@ -18,7 +18,7 @@ import  six
 
 #   Standard Library Imports
 #   --------------------------------------------------------
-import  re
+import  collections, re
 
 
 #   Third Party Imports
@@ -191,7 +191,7 @@ class Statekeeper:
 class StubbornDict(dict):
     '''
     Dictionary that tolerates many input formats.
-    Create it with stubbornDict(arg) factory function.
+    Create with the `stubbornDict(arg)` factory function.
     '''    
     def __iadd__(self, other):
         self.update(other)
