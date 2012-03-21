@@ -13,7 +13,9 @@
 from __future__ import  generators,         \
                         print_function
 
-import collections
+import  collections
+import  optparse
+
 # try:
 #     import six  #   single-source Python 2/3 helper
 # except ImportError, e:
@@ -28,11 +30,11 @@ from    pyvows  import (Vows, expect)
 
 import  pyparsing
 
-from    cmd2        import  *
-from    cmd2.cmd2   import  Cmd,            \
-                            ParsedString,   \
-                            remaining_args
-
+from    cmd2            import  *
+from    cmd2.cmd2       import  Cmd
+from    cmd2.parsers    import  OptionParser,   \
+                                ParsedString,   \
+                                remaining_args
 
 ###     END IMPORTS     ###
 
@@ -308,3 +310,26 @@ r'''['multiline', 'command "with term; ends" now', '\n', '\n']
             
         def expected_results(self, topic):
             expect(topic).to_equal('bar   cow')
+            
+
+@Vows.batch
+class ParserVows(Vows.Context):
+    
+    
+    class OptionParserVows(Vows.Context):
+        def topic(self):
+            return OptionParser()
+            
+        def should_be_optparse_parser(self, topic):
+            expect(isinstance(topic,optparse.OptionParser)).to_be_true()
+            
+            
+    class ParsedStringVows(Vows.Context):
+        def topic(self):
+            return ParsedString()
+            
+        def should_be_string(self, topic):
+            expect(isinstance(topic,str)).to_be_true()
+        
+        def should_be_instance_of_ParsedString(self, topic):
+            expect(topic).to_be_instance_of(ParsedString)

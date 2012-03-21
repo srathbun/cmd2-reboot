@@ -40,7 +40,6 @@ from    cmd2.errors     import (EmbeddedConsoleExit ,
                                 
 from    cmd2.support    import (HistoryItem ,
                                 History     ,
-                                Settings    ,
                                 Statekeeper ,
                                 StubbornDict,
                                 stubbornDict,
