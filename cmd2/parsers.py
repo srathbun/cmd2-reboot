@@ -30,6 +30,13 @@ import  pyparsing
 pyparsing.ParserElement.setDefaultWhitespaceChars(' \t')
 
 
+__all__ =   [   'OptionParser',
+                'ParsedString',
+                'remaining_args',
+                'options_defined',
+                'options'
+            ]
+
 class OptionParser(optparse.OptionParser):
     #   @FIXME
     #       Add DocString
