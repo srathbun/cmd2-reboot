@@ -41,6 +41,12 @@ class OptionParser(optparse.OptionParser):
     #   @FIXME
     #       Add DocString
     
+    #   @FIXME
+    #       Consider supporting the contextmanager protocol 
+    #       (adding `__enter__` and `__exit__` methods).
+    #
+    #       http://docs.python.org/reference/datamodel.html#with-statement-context-managers
+    
     def exit(self, status=0, msg=None):
         #   @FIXME
         #       Add DocString
@@ -61,10 +67,10 @@ class OptionParser(optparse.OptionParser):
         '''
         error(msg : string)
 
-        Print a usage message incorporating 'msg' to stderr and exit.
+        Prints a usage message incorporating `msg` to `stderr`, then exits.
         
         If you override this in a subclass, it should NOT return!
-        It should exit OR raise an exception.
+        It should exit *OR* raise an exception.
         '''
         raise optparse.OptParseError(msg)
 
@@ -93,12 +99,16 @@ class ParsedString(str):
         return new
 
 
-def remaining_args(oldArgs, newArgList):
-    '''Preserves argument's original spacing after removing options.'''
+def remaining_args(oldargs, newarg_list):
+    '''
+    Preserves argument's original spacing after removing options.
+    '''
+    #   @FIXME
+    #       Consider moving inside the OptionParser class
     
-    pattern     = '\s+'.join( re.escape(a) for a in newArgList ) + '\s*$'
-    matchObj    = re.search(pattern, oldArgs)
-    return oldArgs[matchObj.start():]
+    pattern     = '\s+'.join( re.escape(a) for a in newarg_list ) + '\s*$'
+    matchObj    = re.search(pattern, oldargs)
+    return oldargs[matchObj.start():]
 
 
 options_defined = [] # used to tell apart --options from SQL-style --comments
@@ -106,9 +116,9 @@ options_defined = [] # used to tell apart --options from SQL-style --comments
 
 def options(option_list, arg_desc='arg'):
     '''
-    Used as a decorator and passed a list of optparse-style options,
-    alters a cmd2 method to populate its ``opts`` argument from its
-    raw text argument.
+    Decorator function.  Use on a `cmd2` method (passing a list of 
+    optparse-style options) to populate the method's `opts` argument 
+    from its raw text argument.
 
     For example, transform this:
        
@@ -116,19 +126,29 @@ def options(option_list, arg_desc='arg'):
 
     ...into this:
     
-       @options([make_option('-q', '--quick', action="store_true",
-                 help="Makes things fast")],
-                 "source dest")
+       @options([make_option('-q', '--quick', action='store_true',
+                 help='Makes things fast')],
+                 'source dest')
        def do_something(self, arg, opts):
            if opts.quick:
                self.fast_button = True
     '''
+    #   @FIXME
+    #       I *think* that this function is the only place where 
+    #       the `OptionParser` class above is used.  All other places 
+    #       use `optparse.OptionParser` instead.
+    #
+    #       So:
+    #       *   Why is this?
+    #       *   Should we convert existing uses of `optparse.OptionParser` 
+    #           to the `OptionParser` class above?
+    
     if not isinstance(option_list, list):
         option_list = [option_list]
+    
     for opt in option_list:
-        options_defined.append(
-            pyparsing.Literal(opt.get_opt_string())
-            )
+        optstr = opt.get_opt_string()
+        options_defined.append(pyparsing.Literal(optstr))
     
     def option_setup(func):
         optionParser = OptionParser()

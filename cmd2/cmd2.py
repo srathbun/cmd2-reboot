@@ -140,11 +140,13 @@ if six.PY3:
 #       *   refactoring into the Cmd class
 #       *   using `__getattr__()` instead
 def _attr_get_(obj, attr):
-    '''Returns an attribute's value (or None if undefined; no error).
-       Analagous to `.get()` for dictionaries.  
-       
-       Useful when checking for the value of options that may not have 
-       been defined on a given method.'''
+    '''
+    Returns an attribute's value (or None if undefined; no error).
+    Analagous to `.get()` for dictionaries.  
+    
+    Useful when checking for the value of options that may not have 
+    been defined on a given method.
+    '''
     try:
         return getattr(obj, attr)
     except AttributeError:
@@ -154,7 +156,11 @@ optparse.Values.get = _attr_get_    #   this is the only use of _attr_get_()
 
 
 #   @FIXME
-#       Refactor into support module
+#       Refactor into...
+#           support?  
+#           __init__.py?  
+#           a new `compat` module?
+#           
 if subprocess.mswindows:
     #   @FIXME
     #       Add DocString 
@@ -181,7 +187,7 @@ if subprocess.mswindows:
 elif sys.platform == 'darwin':
     can_clip = False
     try:
-        # test for pbcopy - AFAIK, should always be installed on MacOS
+        # test for pbcopy. (Should always be installed on OS X, AFAIK.)
         subprocess.check_call(  'pbcopy -help', 
                                 shell   = True, 
                                 stdout  = subprocess.PIPE, 
@@ -189,6 +195,8 @@ elif sys.platform == 'darwin':
                                 stderr  = subprocess.PIPE)
         can_clip = True
     except (subprocess.CalledProcessError, OSError, IOError):
+        #   @FIXME
+        #       Under what circumstances might this be raised?
         pass
     if can_clip:
         def get_paste_buffer():
@@ -291,37 +299,37 @@ class Cmd(cmd.Cmd):
                             '@' : 'load' , 
                             '@@': '_relative_load'}
                             
-    excludeFromHistory  = 'run r list l history hi ed edit li eof'.split()
-    default_to_shell    = False
-    noSpecialParse      = 'set ed edit exit'.split()
-    defaultExtension    = 'txt'         # For ``save``, ``load``, etc.
-    default_file_name   = 'command.txt' # For ``save``, ``load``, etc.
     abbrev              = True          # Abbreviated commands recognized
     current_script_dir  = None
-    reserved_words      = []
-    feedback_to_output  = False         # Do include nonessentials in >, | output
-    quiet               = False         # Do not suppress nonessential output
     debug               = False
-    locals_in_py        = True
+    default_file_name   = 'command.txt' # For ``save``, ``load``, etc.
+    default_to_shell    = False
+    defaultExtension    = 'txt'         # For ``save``, ``load``, etc.
+    excludeFromHistory  = 'run r list l history hi ed edit li eof'.split()
+    feedback_to_output  = False         # Do include nonessentials in >, | output
     kept_state          = None
+    locals_in_py        = True
+    noSpecialParse      = 'set ed edit exit'.split()
+    quiet               = False         # Do not suppress nonessential output
     redirector          = '>'           # for sending output to file
+    reserved_words      = []
     
     #   @FIXME
     #       Refactor into a Settings class (subdivided into settable/not-settable)
     settable            = stubbornDict(
         '''
-        prompt
+        abbrev                Accept abbreviated commands
+        case_insensitive      upper- and lower-case both OK
         colors                Colorized output (*nix only)
         continuation_prompt   On 2nd+ line of input
         debug                 Show full error stack on error
         default_file_name     for ``save``, ``load``, etc.
-        editor                Program used by ``edit`` 	
-        case_insensitive      upper- and lower-case both OK
-        feedback_to_output    include nonessentials in `|`, `>` results 
-        quiet                 Don't print nonessential feedback
         echo                  Echo command issued into output
+        editor                Program used by ``edit`` 	
+        feedback_to_output    include nonessentials in `|`, `>` results 
+        prompt
+        quiet                 Don't print nonessential feedback
         timing                Report execution times
-        abbrev                Accept abbreviated commands
         ''')
     
     #   ************************************
@@ -341,17 +349,9 @@ class Cmd(cmd.Cmd):
             for editor in ['gedit', 'kate', 'vim', 'emacs', 'nano', 'pico']:
                 if subprocess.Popen(['which', editor], stdout=subprocess.PIPE).communicate()[0]:
                     break
-
-    prefixParser        = pyparsing.Empty()
-    commentGrammars     = pyparsing.Or([pyparsing.pythonStyleComment, 
-                                        pyparsing.cStyleComment])
-    commentGrammars.addParseAction(lambda x: '')
-    commentInProgress   =   pyparsing.Literal('/*') + \
-                            pyparsing.SkipTo(pyparsing.stringEnd ^ '*/')
-    terminators         = [';']
-    blankLinesAllowed   = False
-    multilineCommands   = []
     
+    #   @FIXME
+    #       Refactor into [config? output?] module
     colorcodes =  {
                   'bold'    :   {True:'\x1b[1m', False:'\x1b[22m'},
                   'cyan'    :   {True:'\x1b[36m',False:'\x1b[39m'},
@@ -382,21 +382,18 @@ class Cmd(cmd.Cmd):
     def __init__(self, *args, **kwargs):
         #   @FIXME
         #       Add DocString
+        
         #   @FIXME
         #       Describe what happens in __init__
+        
+        #   @FIXME
+        #       Is there a way to use `__super__`
+        #       that is Python 2+3 compatible?
         cmd.Cmd.__init__(self, *args, **kwargs)
+        
         self.initial_stdout = sys.stdout
         self.history        = History()
         self.pystate        = {}
-        
-        self.shortcuts      = sorted(self.shortcuts.items(), reverse=True)
-        self.keywords       = self.reserved_words   + \
-                                [fname[3:]  for fname in dir(self) 
-                                 if fname.startswith('do_')]
-                                 
-        self.saveparser = ( pyparsing.Optional(pyparsing.Word(pyparsing.nums)^'*')("idx")     + 
-                            pyparsing.Optional(pyparsing.Word(self.settings['legalChars'] + '/\\'))("fname")   +
-                            pyparsing.stringEnd)
         
 #         self.settings_from_cmd = frozenset({
 #                                     'doc_header',
@@ -441,21 +438,29 @@ class Cmd(cmd.Cmd):
 #                                      'redirector',
 #                                      'reserved_words',
 #                                      'shortcuts')
-                                     
-        self.settings       = Settings()
-        self.settings.settable.union(
-            ' '.split('abbrev case_insensitive colors continuation_prompt debug default_file_name echo editor feedback_to_output prompt quiet timing')
-            )
         
-
+        self.shortcuts      = sorted(self.shortcuts.items(), reverse=True)
+        self.keywords       = self.reserved_words   + \
+                                [fname[3:]  for fname in dir(self) 
+                                 if fname.startswith('do_')]
+        
+        #   @FIXME
+        #       Refactor into parsing module
+        self.saveparser = ( pyparsing.Optional(pyparsing.Word(pyparsing.nums)^'*')('idx')     + 
+                            pyparsing.Optional(pyparsing.Word(self.legalChars + '/\\'))('fname')   +
+                            pyparsing.stringEnd)               
+        
+        #   @FIXME
+        #       Refactor into parsing module
         self._init_parser()
         
     
-    def __getattr__(self, name):
+    #def __getattr__(self, name):
         #   Only called when attr not found
         #   in the usual places
         #print("\n" + 'CALLING __getattr__({})'.format( name ) + "\n")
-        return self.settings[name]
+        #return self.settings[name]
+        
         
     
     #   @FIXME
@@ -537,7 +542,8 @@ class Cmd(cmd.Cmd):
         self.inputParser.ignore(self.commentInProgress)               
     
     def _cmdloop(self, intro=None):
-        '''Repeatedly issue a prompt, accept input, parse an initial prefix
+        '''
+        Repeatedly issue a prompt, accept input, parse an initial prefix
         off the received input, and dispatch to action methods, passing them
         the remainder of the line as argument.
         '''
@@ -589,7 +595,9 @@ class Cmd(cmd.Cmd):
         return self.postparsing_postcmd(self.default(arg))
 
     def poutput(self, msg):
-        '''Shortcut for self.stdout.write() (adds newline if necessary).'''
+        '''
+        Shortcut for `self.stdout.write()`. (Adds newline if necessary.)
+        '''
         if msg:
             self.stdout.write(msg)
             if msg[-1] is not '\n':
@@ -603,8 +611,10 @@ class Cmd(cmd.Cmd):
         print(str(errmsg))
     
     def pfeedback(self, msg):
-        '''For printing nonessential feedback.  Can be silenced with `quiet`.
-           Inclusion in redirected output is controlled by `feedback_to_output`.'''
+        '''
+        For printing nonessential feedback.  Can be silenced with `quiet`.
+        `feedback_to_output()` controls whether to include in redirected output.
+        '''
         if not self.quiet:
             if self.feedback_to_output:
                 self.poutput(msg)
@@ -612,14 +622,16 @@ class Cmd(cmd.Cmd):
                 print(msg)
     
     def colorize(self, val, color):
-        '''Given a string (``val``), returns that string wrapped in UNIX-style 
-           special characters that turn on (and then off) text color and style.
-           If the ``colors`` environment paramter is ``False``, or the application
-           is running on Windows, will return ``val`` unchanged.
-           
-           ``color`` should be one of the supported strings (or styles):
-           
-            red/blue/green/cyan/magenta, bold, underline'''
+        '''
+        Given a string (``val``), returns that string wrapped in UNIX-style 
+       special characters that turn on (and then off) text color and style.
+       If the ``colors`` environment paramter is ``False``, or the application
+       is running on Windows, will return ``val`` unchanged.
+       
+       ``color`` should be one of the supported strings (or styles):
+       
+        red/blue/green/cyan/magenta, bold, underline
+        '''
         if self.colors and (self.stdout == self.initial_stdout):
             return  self.colorcodes[color][True] + \
                     val                          + \
@@ -692,16 +704,15 @@ class Cmd(cmd.Cmd):
         return result
     
     def onecmd(self, line):
-        '''Interpret the argument as though it had been typed in response
-        to the prompt.
+        '''
+        Interpret the argument as though it had been typed in response
+        to the prompt.  (Overrides `cmd.onecmd()`.)
 
-        This may be overridden, but should not normally need to be;
-        see the precmd() and postcmd() methods for useful execution hooks.
-        The return value is a flag indicating whether interpretation of
-        commands by the interpreter should stop.
+        This may be overridden, but shouldn't normally need to be.
+        (See the `precmd()` and `postcmd()` methods for useful execution hooks.)
         
-        This (`cmd2`) version of `onecmd` already overrides `cmd`'s `onecmd`.
-
+        Returns a flag indicating whether interpretation of commands by 
+        the interpreter should stop.
         '''
         statement    = self.parsed(line)
         self.lastcmd = statement.parsed.raw   
@@ -757,7 +768,7 @@ class Cmd(cmd.Cmd):
         Keep accepting lines of input until the command is complete.
         '''
         #   @FIXME
-        #       How is this different from Cmd.complete_statement() ?
+        #       Describe: How is this different from `Cmd.complete_statement()`?
         
         if (not line) or (
             not pyparsing.Or(self.commentGrammars).
@@ -836,8 +847,10 @@ class Cmd(cmd.Cmd):
         return result
         
     def pseudo_raw_input(self, prompt):
-        '''Extracted from cmd's cmdloop. Similar to `raw_input()`, but 
-        accounts for changed stdin / stdout'''
+        '''
+        Extracted from `cmd.cmdloop()`. Similar to `raw_input()`, but 
+        accounts for changed stdin/stdout.
+        '''
         
         if self.use_rawinput:
             try:
@@ -856,16 +869,18 @@ class Cmd(cmd.Cmd):
         return line
     
     def select(self, options, prompt='Your choice? '):
-        '''Presents a numbered menu to the user.  Modelled after
-           the bash shell's SELECT.  Returns the item chosen.
+        '''
+        Presents a numbered menu to the user.  Returns the item chosen.
+        (Modeled after the bash shell's `SELECT`.)
            
-           Argument ``options`` can be:
+           Argument `options` can be:
 
-             | a single string      -> will be split into one-word options
+             | a single string      -> split into one-word options
              | a list of strings    -> will be offered as options
              | a list of tuples     -> interpreted as (value, text), so 
                                        that the return value can differ from
-                                       the text advertised to the user '''
+                                       the text advertised to the user
+        '''
         if isinstance(options, six.string_types):
             options = zip(options.split(), options.split())
         fulloptions = []
@@ -892,6 +907,10 @@ class Cmd(cmd.Cmd):
     def last_matching(self, arg):
         #   @FIXME
         #       Add DocString
+        
+        #   @FIXME
+        #       Consider refactoring into 
+        #       `History` class (in `support` module)
         try:
             if arg:
                 return self.history.get(arg)[-1]
@@ -922,12 +941,15 @@ class Cmd(cmd.Cmd):
     def cmdloop(self):
         #   @FIXME
         #       Add DocString
+        
+        #   @FIXME
+        #       Why isn't this using cmd2's own OptionParser?
         parser = optparse.OptionParser()
         parser.add_option(  '-t', 
                             '--test', 
                             dest    ='test',
                             action  ='store_true', 
-                            help    ='Test against transcript(s) in FILE (wildcards OK)')
+                            help    ='Test against transcript(s) in FILE (accepts wildcards)')
         (callopts, callargs) = parser.parse_args()
         if callopts.test:
             self.runTranscriptTests(callargs)
@@ -956,7 +978,7 @@ class Cmd(cmd.Cmd):
     def do_help(self, arg):
         #   @FIXME
         #       Add DocString 
-        #       (How is this different from Cmd.do_help() ?)
+        #       (How is this different from `cmd.do_help()`?)
         if arg:
             funcname = self.func_named(arg)
             if funcname:
@@ -983,6 +1005,7 @@ class Cmd(cmd.Cmd):
         #           certain circumstances?
         #       *   error codes? (e.g., "return 0 on success, >0 on error")
         #       *   signals? (SIGINT, SIGHUP, SIGEOF, etc.)
+        #
         return self._STOP_SCRIPT_NO_EXIT # End of script; should not exit app
     
     do_eof  = do_EOF
@@ -1024,9 +1047,9 @@ class Cmd(cmd.Cmd):
     
     def do_set(self, arg):
         '''
-        Sets a cmd2 parameter.  Accepts abbreviated parameter names so long
-        as there is no ambiguity.  Call without arguments for a list of 
-        settable parameters with their values.
+        Sets a `cmd2` parameter.  Accepts abbreviated parameter names so long
+        as there's no ambiguity.  Call without arguments to list settable 
+        parameters and their values.
         '''
         try:
             statement, \
@@ -1063,7 +1086,7 @@ class Cmd(cmd.Cmd):
             self.do_show( arg )
                 
     def do_pause(self, arg):
-        '''Displays the specified text then waits for the user to press RETURN.'''
+        '''Displays the specified text, then waits for user to press RETURN.'''
         raw_input(arg + '\n')
         
     def do_shell(self, arg):
@@ -1075,11 +1098,15 @@ class Cmd(cmd.Cmd):
         py <command>: Executes a Python command.
         py: Enters interactive Python mode.
         
-        End with ``Ctrl-D`` (Unix) / ``Ctrl-Z`` (Windows), ``quit()``, '`exit()``.
+        End with:
+            `Ctrl-D` (Unix) 
+            `Ctrl-Z` (Windows)
+            `quit()`
+            `exit()`
         
-        Non-python commands can be issued with ``cmd("your command")``.
+        Non-python commands can be issued with `cmd('your command')`.
         
-        Run python code from external files with ``run("filename.py")``
+        Run python code from external files with `run('filename.py')`.
         '''
         self.pystate['self'] = self
         arg         = arg.parsed.raw[2:].strip()
@@ -1128,7 +1155,7 @@ class Cmd(cmd.Cmd):
             ], 
             arg_desc    = '(limit on which commands to include)')
     def do_history(self, arg, opts):
-        '''history [arg]: lists past commands issued
+        '''history [arg]: list past commands issued
         
         | no arg:         list all
         | arg is integer: list one history item, by index
@@ -1146,7 +1173,7 @@ class Cmd(cmd.Cmd):
                 self.stdout.write(hi.pr())
     
     def do_list(self, arg):
-        '''list [arg]: lists last command issued
+        '''list [arg]: List last command issued
         
         no arg                      -> list most recent command
         arg is integer              -> list one history item, by index
@@ -1167,13 +1194,15 @@ class Cmd(cmd.Cmd):
         
     def do_ed(self, arg):
         '''
-        ed: edit most recent command in text editor
-        ed [N]: edit numbered command from history
-        ed [filename]: edit specified file name
+        ed:             edit most recent command in text editor
+        ed [N]:         edit numbered command from history
+        ed [filename]:  edit specified file name
         
-        commands are run after editor is closed.
-        "set edit (program-name)" or set  EDITOR environment variable
-        to control which editing program is used.
+        Commands are run after the editor is closed.
+        
+        To set which editor to use, either: 
+            (1) `set edit [program-name]` or 
+            (2) set the `EDITOR` environment variable
         '''
         
         if not self.editor:
@@ -1231,9 +1260,9 @@ class Cmd(cmd.Cmd):
             
     def do__relative_load(self, arg=None):
         '''
-        Runs commands in script at file or URL; if this is called from within an
-        already-running script, the filename will be interpreted relative to the 
-        already-running script's directory.
+        Runs commands in script at file or URL. If called from within an
+        already-running script, the filename will be interpreted relative to 
+        that script's directory.
         '''
         if arg:
             arg             = arg.split(None, 1)

@@ -49,6 +49,13 @@ class HistoryItem(str):
         #   @FIXME
         #       Add DocString
         return self.listformat % (self.idx, str(self))
+    
+    #   @FIXME
+    #       Consider adding:
+    #       -   __str__
+    #       -   __format__
+    #       -   __repr__
+    #       -   __unicode__ (for Python 2)
 
 
 class History(list):
@@ -75,6 +82,10 @@ class History(list):
     def get(self, getme=None, fromEnd=False):
         #   @FIXME
         #       Add DocString
+        
+        #   @FIXME
+        #       Consider using `__getattr__()` or `__getattribute__()` 
+        #       instead
         if not getme:
             return self
         try:
@@ -166,6 +177,10 @@ class Statekeeper:
     #   @FIXME
     #       Add DocString
     
+    #   @FIXME
+    #       Add support for pickling protocol
+    #       http://docs.python.org/library/pickle.html#the-pickle-protocol
+    
     def __init__(self, obj, attribs):
         #   @FIXME
         #       Add DocString; what happens on __init__?
@@ -193,14 +208,14 @@ class StubbornDict(dict):
     Dictionary that tolerates many input formats.
     Create with the `stubbornDict(arg)` factory function.
     '''    
-    def __iadd__(self, other):
-        self.update(other)
-        return self
-    
     def __add__(self, other):
         selfcopy = copy.copy(self)
         selfcopy.update(stubbornDict(other))
         return selfcopy
+    
+    def __iadd__(self, other):
+        self.update(other)
+        return self
     
     def __radd__(self, other):
         return self.__add__(other)
@@ -212,7 +227,9 @@ class StubbornDict(dict):
     
     @classmethod
     def to_dict(cls, arg):
-        '''Generates dictionary from a string or list of strings.'''
+        '''
+        Generates dictionary from a string or list of strings.
+        '''
         result = {}
         
         if hasattr(arg, 'splitlines'):
@@ -248,6 +265,10 @@ class StubbornDict(dict):
 def stubbornDict(*arg, **kwarg):
     #   @FIXME
     #       Add DocString
+    
+    #   @FIXME
+    #       Why have a factory method instead of 
+    #       making this code into StubbornDict.__init__()?
     result = {}
     for a in arg:
         result.update(StubbornDict.to_dict(a))
@@ -256,8 +277,9 @@ def stubbornDict(*arg, **kwarg):
 
 
 def cast(current, new):
-    '''Tries to force a new value into the same type as the current.'''
-    
+    '''
+    Tries to force a new value into the same type as the current.
+    '''
     typ = type(current)
     if typ == bool:
         try:
@@ -283,7 +305,9 @@ def cast(current, new):
 
 
 def ljust(x, width, fillchar=' '):
-    '''Works like `str.ljust()` for lists.'''
+    '''
+    Works like `str.ljust()` for lists.
+    '''
     if hasattr(x, 'ljust'):
         return x.ljust(width, fillchar)
     else:
