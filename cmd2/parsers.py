@@ -47,6 +47,14 @@ class OptionParser(optparse.OptionParser):
     #
     #       http://docs.python.org/reference/datamodel.html#with-statement-context-managers
     
+    def __init__(self, *args, **kwargs):
+        #   @FIXME
+        #       Add DocString
+        
+        #   @FIXME
+        #       
+        optparse.OptionParser.__init__(self, *args, **kwargs)
+    
     def exit(self, status=0, msg=None):
         #   @FIXME
         #       Add DocString
