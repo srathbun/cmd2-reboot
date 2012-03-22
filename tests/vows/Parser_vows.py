@@ -12,7 +12,10 @@
 #   Convenience, forward-compatibility
 from __future__ import  generators,         \
                         print_function
-import collections
+
+import  collections
+import  optparse
+
 # try:
 #     import six  #   single-source Python 2/3 helper
 # except ImportError, e:
@@ -27,9 +30,11 @@ from    pyvows  import (Vows, expect)
 
 import  pyparsing
 
-import  cmd2
-from    cmd2    import Cmd, ParsedString, remaining_args
-
+from    cmd2            import  *
+from    cmd2.cmd2       import  Cmd
+from    cmd2.parsers    import  OptionParser,   \
+                                ParsedString,   \
+                                remaining_args
 
 ###     END IMPORTS     ###
 
@@ -39,8 +44,9 @@ from    cmd2    import Cmd, ParsedString, remaining_args
 #===================================================================
 
 
-#   This is a utility function for use in tests below.
+
 def parsed_input(input, topic):
+    #   Utility function for use in tests below.
     output = topic.parser.parseString(input).dump()
     return output
 
@@ -55,7 +61,7 @@ class DocTestVows(Vows.Context):
 
         def topic(self):
             c = Cmd()
-            c.multilineCommands = ['multiline']
+            c.multiline_commands = ['multiline']
             c.case_insensitive  = True
             c._init_parser()
             return c
@@ -231,17 +237,17 @@ class DocTestVows(Vows.Context):
             output = parsed_input('multiline has > inside an unfinished command',topic)
             expect(output).to_equal(
 '''['multiline', ' has > inside an unfinished command']
-- multilineCommand: multiline''')
+- multiline_command: multiline''')
     
         def test_multiline_has_redirect_inside(self, topic):
             output = parsed_input('multiline has > inside;',topic)
             expect(output).to_equal(
 '''['multiline', 'has > inside', ';', '']
 - args: has > inside
-- multilineCommand: multiline
+- multiline_command: multiline
 - statement: ['multiline', 'has > inside', ';']
   - args: has > inside
-  - multilineCommand: multiline
+  - multiline_command: multiline
   - terminator: ;
 - terminator: ;''')
         
@@ -249,17 +255,17 @@ class DocTestVows(Vows.Context):
             output = parsed_input(r'multiline command /* with comment in progress;',topic)
             expect(output).to_equal(
 '''['multiline', ' command /* with comment in progress;']
-- multilineCommand: multiline''')
+- multiline_command: multiline''')
     
         def test_multiline_command_with_complete_comment(self, topic):
             output = parsed_input('multiline command /* with comment complete */ is done;',topic)
             expect(output).to_equal(
 '''['multiline', 'command /* with comment complete */ is done', ';', '']
 - args: command /* with comment complete */ is done
-- multilineCommand: multiline
+- multiline_command: multiline
 - statement: ['multiline', 'command /* with comment complete */ is done', ';']
   - args: command /* with comment complete */ is done
-  - multilineCommand: multiline
+  - multiline_command: multiline
   - terminator: ;
 - terminator: ;''')
     
@@ -268,10 +274,10 @@ class DocTestVows(Vows.Context):
             expect(output).to_equal(
 r'''['multiline', 'command ends', '\n', '\n']
 - args: command ends
-- multilineCommand: multiline
+- multiline_command: multiline
 - statement: ['multiline', 'command ends', '\n', '\n']
   - args: command ends
-  - multilineCommand: multiline
+  - multiline_command: multiline
   - terminator: ['\n', '\n']
 - terminator: ['\n', '\n']''')
     
@@ -280,10 +286,10 @@ r'''['multiline', 'command ends', '\n', '\n']
             expect(output).to_equal(
 r'''['multiline', 'command "with term; ends" now', '\n', '\n']
 - args: command "with term; ends" now
-- multilineCommand: multiline
+- multiline_command: multiline
 - statement: ['multiline', 'command "with term; ends" now', '\n', '\n']
   - args: command "with term; ends" now
-  - multilineCommand: multiline
+  - multiline_command: multiline
   - terminator: ['\n', '\n']
 - terminator: ['\n', '\n']''')
     
@@ -304,3 +310,26 @@ r'''['multiline', 'command "with term; ends" now', '\n', '\n']
             
         def expected_results(self, topic):
             expect(topic).to_equal('bar   cow')
+            
+
+@Vows.batch
+class ParserVows(Vows.Context):
+    
+    
+    class OptionParserVows(Vows.Context):
+        def topic(self):
+            return OptionParser()
+            
+        def should_be_optparse_parser(self, topic):
+            expect(isinstance(topic,optparse.OptionParser)).to_be_true()
+            
+            
+    class ParsedStringVows(Vows.Context):
+        def topic(self):
+            return ParsedString()
+            
+        def should_be_string(self, topic):
+            expect(isinstance(topic,str)).to_be_true()
+        
+        def should_be_instance_of_ParsedString(self, topic):
+            expect(topic).to_be_instance_of(ParsedString)

@@ -1,24 +1,33 @@
+#!/usr/bin/env python -B
+# -*- coding: UTF-8 -*-
 '''A sample application for cmd2.'''
 
-from    cmd2 import Cmd,        \
-                    make_option,\
-                    options
 
-import  unittest, optparse, sys
+#   __future__ first
+from    __future__  import  generators,         \
+                            print_function,     \
+                            with_statement
+
+from    optparse    import  make_option
+
+import  cmd2
+from    cmd2    import  Cmd,        \
+                        options
+
 
 class CmdLineApp(Cmd):
-    multilineCommands = ['orate']
+    multiline_commands = ['orate']
     Cmd.shortcuts.update({'&': 'speak'})
     maxrepeats = 3
     redirector = '->'
     Cmd.settable.append('maxrepeats   Max number of `--repeat`s allowed')
 
-    @options([make_option('-p', '--piglatin',   action="store_true", help="atinLay"),
-              make_option('-s', '--shout',      action="store_true", help="N00B EMULATION MODE"),
-              make_option('-r', '--repeat',     type="int",          help="output [n] times")
+    @options([make_option('-p', '--piglatin',   action='store_true', help='atinLay'),
+              make_option('-s', '--shout',      action='store_true', help='N00B EMULATION MODE'),
+              make_option('-r', '--repeat',     type='int',          help='output [n] times')
              ], arg_desc = '(text to say)')
     def do_speak(self, arg, opts=None):
-        """Repeats what you tell me to."""
+        '''Repeats what you tell me to.'''
         arg = ''.join(arg)
         if opts.piglatin:
             arg = '%s%say' % (arg[1:].rstrip(), arg[0])
