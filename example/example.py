@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python -B
 # -*- coding: UTF-8 -*-
 '''A sample application for cmd2.'''
 
@@ -9,14 +9,14 @@ from    __future__  import  generators,         \
                             with_statement
 
 from    optparse    import  make_option
-from    cmd2 import *
 
-from    cmd2 import Cmd,        \
-                    options
+import  cmd2
+from    cmd2    import  Cmd,        \
+                        options
 
 
 class CmdLineApp(Cmd):
-    multilineCommands = ['orate']
+    multiline_commands = ['orate']
     Cmd.shortcuts.update({'&': 'speak'})
     maxrepeats = 3
     redirector = '->'

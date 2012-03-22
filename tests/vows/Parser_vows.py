@@ -61,7 +61,7 @@ class DocTestVows(Vows.Context):
 
         def topic(self):
             c = Cmd()
-            c.multilineCommands = ['multiline']
+            c.multiline_commands = ['multiline']
             c.case_insensitive  = True
             c._init_parser()
             return c
@@ -237,17 +237,17 @@ class DocTestVows(Vows.Context):
             output = parsed_input('multiline has > inside an unfinished command',topic)
             expect(output).to_equal(
 '''['multiline', ' has > inside an unfinished command']
-- multilineCommand: multiline''')
+- multiline_command: multiline''')
     
         def test_multiline_has_redirect_inside(self, topic):
             output = parsed_input('multiline has > inside;',topic)
             expect(output).to_equal(
 '''['multiline', 'has > inside', ';', '']
 - args: has > inside
-- multilineCommand: multiline
+- multiline_command: multiline
 - statement: ['multiline', 'has > inside', ';']
   - args: has > inside
-  - multilineCommand: multiline
+  - multiline_command: multiline
   - terminator: ;
 - terminator: ;''')
         
@@ -255,17 +255,17 @@ class DocTestVows(Vows.Context):
             output = parsed_input(r'multiline command /* with comment in progress;',topic)
             expect(output).to_equal(
 '''['multiline', ' command /* with comment in progress;']
-- multilineCommand: multiline''')
+- multiline_command: multiline''')
     
         def test_multiline_command_with_complete_comment(self, topic):
             output = parsed_input('multiline command /* with comment complete */ is done;',topic)
             expect(output).to_equal(
 '''['multiline', 'command /* with comment complete */ is done', ';', '']
 - args: command /* with comment complete */ is done
-- multilineCommand: multiline
+- multiline_command: multiline
 - statement: ['multiline', 'command /* with comment complete */ is done', ';']
   - args: command /* with comment complete */ is done
-  - multilineCommand: multiline
+  - multiline_command: multiline
   - terminator: ;
 - terminator: ;''')
     
@@ -274,10 +274,10 @@ class DocTestVows(Vows.Context):
             expect(output).to_equal(
 r'''['multiline', 'command ends', '\n', '\n']
 - args: command ends
-- multilineCommand: multiline
+- multiline_command: multiline
 - statement: ['multiline', 'command ends', '\n', '\n']
   - args: command ends
-  - multilineCommand: multiline
+  - multiline_command: multiline
   - terminator: ['\n', '\n']
 - terminator: ['\n', '\n']''')
     
@@ -286,10 +286,10 @@ r'''['multiline', 'command ends', '\n', '\n']
             expect(output).to_equal(
 r'''['multiline', 'command "with term; ends" now', '\n', '\n']
 - args: command "with term; ends" now
-- multilineCommand: multiline
+- multiline_command: multiline
 - statement: ['multiline', 'command "with term; ends" now', '\n', '\n']
   - args: command "with term; ends" now
-  - multilineCommand: multiline
+  - multiline_command: multiline
   - terminator: ['\n', '\n']
 - terminator: ['\n', '\n']''')
     

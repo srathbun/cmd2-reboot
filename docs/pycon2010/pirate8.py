@@ -34,7 +34,7 @@ class Pirate(Cmd):
         print("Quiterrr!")
         return True    
     default_to_shell = True
-    multilineCommands = ['sing']
+    multiline_commands = ['sing']
     terminators = Cmd.terminators + ['...']
     songcolor = 'blue'
     settable = Cmd.settable + 'songcolor Color to ``sing`` in (red/blue/green/cyan/magenta, bold, underline)'
