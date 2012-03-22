@@ -32,7 +32,8 @@ from    .support    import (HistoryItem ,
                             cast        ,
                             ljust       ,
                             replace_with_file_contents)
-                            
+
+Cmd = cmd2.Cmd     
 #-------------------------------------------
 #   RESERVED:
 #   Put initialization-related 
