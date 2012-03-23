@@ -38,8 +38,10 @@ __all__ =   [   'OptionParser',
             ]
 
 class OptionParser(optparse.OptionParser):
-    #   @FIXME
-    #       Add DocString
+    '''
+    A tweaked subclass of `optparse.OptionParser` to control the output
+    of help- and error-messages.
+    '''
     
     #   @FIXME
     #       Consider supporting the contextmanager protocol 
@@ -61,7 +63,7 @@ class OptionParser(optparse.OptionParser):
         self.values._exit = True
         if msg:
             print(msg)
-            
+
     def print_help(self, *args, **kwargs):
         #   @FIXME
         #       Add DocString
@@ -90,11 +92,11 @@ class ParsedString(str):
     def full_parsed_statement(self):
         #   @FIXME
         #       Add DocString
-        new        = ParsedString('%s %s' % (self.parsed.command, 
-                                             self.parsed.args))
-        new.parsed = self.parsed
-        new.parser = self.parser
-        return new       
+        new         =   ParsedString('%s %s' % (self.parsed.command, 
+                                                self.parsed.args))
+        new.parsed  =   self.parsed
+        new.parser  =   self.parser
+        return new
     
     def with_args_replaced(self, newargs):
         #   @FIXME
@@ -125,7 +127,7 @@ options_defined = [] # used to tell apart --options from SQL-style --comments
 def options(option_list, arg_desc='arg'):
     '''
     Decorator function.  Use on a `cmd2` method (passing a list of 
-    optparse-style options) to populate the method's `opts` argument 
+    optparse-style options). This will populate the method's `opts` argument 
     from its raw text argument.
 
     For example, transform this:
@@ -160,12 +162,18 @@ def options(option_list, arg_desc='arg'):
     
     def option_setup(func):
         optionParser = OptionParser()
+        '''
+        Does the option-setup and returns the decorated method.
+        '''
         for opt in option_list:
             optionParser.add_option(opt)
         optionParser.set_usage("%s [options] %s" % ( func.__name__[3:], arg_desc) )
         optionParser._func = func
         
         def new_func(instance, arg):
+            '''
+            Modifies the decorated function and returns it.
+            '''
             try:
                 opts, newArgList = optionParser.parse_args(arg.split())
                 # Must find the remaining args in the original argument list, but 

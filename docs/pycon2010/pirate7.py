@@ -37,7 +37,7 @@ class Pirate(Cmd):
     multiline_commands = ['sing']
     terminators = Cmd.terminators + ['...']
     songcolor = 'blue'
-    settable = Cmd.settable + 'songcolor Color to ``sing`` in (red/blue/green/cyan/magenta, bold, underline)'
+    settable = Cmd.settable + 'songcolor Color to `sing` in (red/blue/green/cyan/magenta, bold, underline)'
     Cmd.shortcuts.update({'~': 'sing'})
     def do_sing(self, arg):
         print(self.colorize(arg, self.songcolor))

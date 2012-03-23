@@ -85,6 +85,7 @@ class PasteBufferError(EnvironmentError):
                     
                     To install on Debian/Ubuntu:
                     
-                    ``sudo apt-get install xclip``'''        
+                    `sudo apt-get install xclip`
+                '''        
     def __init__(self):
         Exception.__init__(self, self.errmsg)

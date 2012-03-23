@@ -23,8 +23,7 @@ import  collections, re
 
 #   Third Party Imports
 #   --------------------------------------------------------
-import  pyparsing
-
+#import pyparsing
 
 #   Cmd2 Modules
 #   --------------------------------------------------------
@@ -33,21 +32,27 @@ from    .parsers    import (OptionParser,
 
 
 class HistoryItem(str):
-    #   @FIXME
-    #       Add DocString
+    '''
+    This extends `str` with a tweaked `print_` method.  Also preemptively 
+    stores a lowercase version of itself as well as an index number.
+    '''
     
     listformat = '-------------------------[%d]\n%s\n'
     
     def __init__(self, instr):
         #   @FIXME
-        #       Add DocString
+        #       Add docstring
+        
+        #   @FIXME
+        #       Unused argument `instr`
         str.__init__(self)
         self.lowercase  = self.lower()
         self.idx        = None
     
-    def pr(self):
-        #   @FIXME
-        #       Add DocString
+    def print_(self):
+        '''
+        Prints the HistoryItem using a custom listformat.
+        '''
         return self.listformat % (self.idx, str(self))
     
     #   @FIXME
@@ -67,17 +72,19 @@ class History(list):
     spanpattern     = re.compile(r'^\s*(?P<start>\-?\d+)?\s*(?P<separator>:|(\.{2,}))?\s*(?P<end>\-?\d+)?\s*$')
     
     def append(self, new):
-        #   @FIXME
-        #       Add DocString
         new     = HistoryItem(new)
         list.append(self, new)
         new.idx = len(self)
+        '''
+        Appends `new_histitem` to the current History list.
+        '''
     
     def extend(self, new):
-        #   @FIXME
-        #       Add DocString
         for n in new:
             self.append(n)
+        '''
+        Adds multiple items to the current History list.
+        '''
         
     def get(self, getme=None, fromEnd=False):
         #   @FIXME
@@ -156,8 +163,9 @@ class History(list):
         return result
                 
     def to_index(self, raw):
-        #   @FIXME
-        #       Add DocString
+        '''
+        Gets the index number of `raw`.
+        '''
         if raw:
             result  = self.zero_based_index(int(raw))
         else:
@@ -165,8 +173,9 @@ class History(list):
         return result
     
     def zero_based_index(self, onebased):
-        #   @FIXME
-        #       Add DocString
+        '''
+        Converts a one-based index (`onebased`) to a zero-based index.
+        '''
         result  = onebased
         if result > 0:
             result -= 1
@@ -174,8 +183,12 @@ class History(list):
 
 
 class Statekeeper:
-    #   @FIXME
-    #       Add DocString
+    '''
+    Saves and restores snapshots of a Python object's state.  Does not store
+    data to the filesystem (i.e. doesn't use pickle).  
+    
+    Be careful!  Data is lost when Python execution stops.
+    '''
     
     #   @FIXME
     #       Add support for pickling protocol

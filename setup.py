@@ -9,7 +9,7 @@ except ImportError:
 import sys
 
 install_requires = ['pyparsing>=1.5.6']
-long_description = '''Enhancements for standard library's ``cmd`` module.
+long_description = '''Enhancements for standard library's `cmd` module.
 
 This drop-in replacement adds several features for command-prompt tools:
 
@@ -19,17 +19,17 @@ This drop-in replacement adds several features for command-prompt tools:
     * Case-insensitive commands
     * Accepts abbreviated commands when unambiguous
     * Parse commands with flags
-    * Special-character shortcut commands beyond cmd's ``@`` and ``!``
+    * Special-character shortcut commands beyond cmd's `@` and `!`
     * Settable environment parameters
-    * ``> _filename_``, ``>> _filename_``: redirect output to _filename_
-    * ``< _filename_``: get input from _filename_
-    * ``>``, ``>>``, ``<`` (without a filename): Redirect to/from the paste buffer
-    * ``py`` enters interactive Python console
+    * `> _filename_`, `>> _filename_`: redirect output to _filename_
+    * `< _filename_`: get input from _filename_
+    * `>`, `>>`, `<` (without a filename): Redirect to/from the paste buffer
+    * `py` enters interactive Python console
     * Test apps against sample session transcript (see example/example.py)
 
-Usable without modification anywhere ``cmd`` is used. Simply ``import cmd2.Cmd`` in place of ``cmd.Cmd``.
+Usable without modification anywhere `cmd` is used. Simply `import cmd2.Cmd` in place of `cmd.Cmd`.
 
-Running `2to3 <http://docs.python.org/library/2to3.html>` against ``cmd2.py`` 
+Running `2to3 <http://docs.python.org/library/2to3.html>` against `cmd2.py` 
 generates working, Python3-based code.
 
 Documentation:

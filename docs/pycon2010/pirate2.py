@@ -1,5 +1,5 @@
 from cmd import Cmd
-# using ``do_`` methods
+# using `do_` methods
 
 class Pirate(Cmd):
     gold = 3

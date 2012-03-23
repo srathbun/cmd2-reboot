@@ -17,13 +17,12 @@ import  six
 import  doctest ,\
         unittest
 
-#   @FIXME
-#       Refactor into support module 
 class Borg(object):
-    '''All instances of any Borg subclass will share state.
+    '''
+    All instances of any Borg subclass will share state.
     
-    From Python Cookbook (2nd Edition), recipe 6.16.'''
-    
+    From Python Cookbook (2nd Edition), recipe 6.16.
+    '''
     #   @FIXME
     #       Edit DocString to describe where Borg is 
     #       used in Cmd2, and where Cmd2 users may find it
@@ -36,9 +35,9 @@ class Borg(object):
     #       
     #       -- OR --
     #
-    #       Use six.with_metaclass; @see
-    #       http://packages.python.org/six/#syntax-compatibility
+    #       Use six.with_metaclass; @see:
     #
+    #       http://packages.python.org/six/#syntax-compatibility
     def __new__(cls, *a, **k):
         obj = object.__new__(cls, *a, **k)
         obj.__dict__ = cls._shared_state
@@ -73,10 +72,11 @@ class OutputTrap(Borg):
 #   @FIXME
 #       Refactor into dedicated test module        
 class Cmd2TestCase(unittest.TestCase):
-    '''Subclass this (and set CmdApp) to make a ``unittest.TestCase`` class
-       that will execute the commands in a transcript file and expect the results shown.
+    '''
+    Subclass this (and set CmdApp) to make a `unittest.TestCase` class
+    that will execute the commands in a transcript file and expect the results shown.
        
-       See example.py.
+    See `example.py`.
     '''
     
     CmdApp = None
@@ -117,14 +117,12 @@ class Cmd2TestCase(unittest.TestCase):
                 try:
                     line = transcript.next()
                 except StopIteration:
-                    raise (StopIteration, 
-                           'Transcript broke off while reading command beginning at line %d with\n%s' 
-                           % (command[0]))
+                    raise StopIteration, 'Transcript broke off while reading command beginning at line %d with\n%s' % (command[0])
                 lineNum += 1
             command = ''.join(command)               
             # Send the command into the application and capture the resulting output
             stop    = self.cmdapp.onecmd_plus_hooks(command)
-            #TODO: should act on ``stop``
+            #TODO: should act on `stop`
             result  = self.outputTrap.read()
             # Read the expected result from transcript
             if line.startswith(self.cmdapp.prompt):
@@ -175,7 +173,7 @@ class Cmd2TestCase(unittest.TestCase):
                 self.transcripts[fname] = iter(tfile.readlines())
                 tfile.close()
         if not len(self.transcripts):
-            raise (StandardError,), 'No test files found; nothing to test.'
+            raise StandardError,'No test files found; nothing to test.'
     
     def runTest(self): # was `testall`
         #   @FIXME 
@@ -188,13 +186,13 @@ class Cmd2TestCase(unittest.TestCase):
 
 
 def runTranscriptTests(self, callargs):
-        #   @FIXME
-        #       Add DocString
-        class TestMyAppCase(Cmd2TestCase):
-            CmdApp = self.__class__        
-        self.__class__.testfiles = callargs
-        sys.argv    = [sys.argv[0]] # the --test argument upsets unittest.main()
-        testcase    = TestMyAppCase()
-        runner      = unittest.TextTestRunner()
-        result      = runner.run(testcase)
-        result.printErrors()
+    #   @FIXME
+    #       Add DocString
+    class TestMyAppCase(Cmd2TestCase):
+        CmdApp = self.__class__        
+    self.__class__.testfiles = callargs
+    sys.argv    = [sys.argv[0]] # the --test argument upsets unittest.main()
+    testcase    = TestMyAppCase()
+    runner      = unittest.TextTestRunner()
+    result      = runner.run(testcase)
+    result.printErrors()

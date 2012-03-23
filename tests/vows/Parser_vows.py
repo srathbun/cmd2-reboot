@@ -306,7 +306,7 @@ r'''['multiline', 'command "with term; ends" now', '\n', '\n']
     
     class TestRemainingArgs(Vows.Context):
         def topic(self):
-            return cmd2.remaining_args('-f bar   bar   cow', ['bar', 'cow'])
+            return remaining_args('-f bar   bar   cow', ['bar', 'cow'])
             
         def expected_results(self, topic):
             expect(topic).to_equal('bar   cow')

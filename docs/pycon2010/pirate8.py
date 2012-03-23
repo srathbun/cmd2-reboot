@@ -7,21 +7,28 @@ class Pirate(Cmd):
     def default(self, line):
         print('What mean ye by "{0}"?'.format(line))
     def do_loot(self, arg):
-        'Seize booty from a passing ship.'
+        '''
+        Seize booty from a passing ship.
+        '''
         self.gold += 1
+    
     def do_drink(self, arg):
-        '''Drown your sorrrows in rrrum.
+        '''
+        Drown your sorrrows in rrrum.
         
-        drink [n] - drink [n] barrel[s] o' rum.'''          
+        drink [n] - drink [n] barrel[s] o' rum.
+        '''          
         try:
             self.gold -= int(arg)
         except:
             if arg:
                 print('''What's "{0}"?  I'll take rrrum.'''.format(arg))
             self.gold -= 1            
+    
     def precmd(self, line):
         self.initial_gold = self.gold
         return line
+    
     def postcmd(self, stop, line):   
         if self.gold != self.initial_gold:
             print('Now we gots {0} doubloons'
@@ -30,6 +37,7 @@ class Pirate(Cmd):
             print("Off to debtorrr's prison.")
             stop = True
         return stop
+    
     def do_quit(self, arg):
         print("Quiterrr!")
         return True    
