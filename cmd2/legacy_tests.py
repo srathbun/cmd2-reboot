@@ -13,9 +13,14 @@ from    __future__  import  generators,         \
 import  six
 
 
-#   Testing
-import  doctest ,\
-        unittest
+import  doctest,    \
+        unittest,   \
+        re,         \
+        glob,       \
+        sys
+        
+import  pyparsing
+
 
 class Borg(object):
     '''

@@ -36,7 +36,7 @@ from    cmd2.errors     import (EmbeddedConsoleExit ,
                                 EmptyStatement      ,
                                 NotSettableError    ,
                                 PasteBufferError    ,
-                                pastebufferr)
+                                PASTEBUFF_ERR)
                                 
 from    cmd2.support    import (HistoryItem ,
                                 History     ,

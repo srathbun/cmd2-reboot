@@ -201,64 +201,64 @@ class History(list):
     A list of HistoryItems that knows how to respond to user requests.
     '''
     
-    rangePattern    = re.compile(r'^\s*(?P<start>[\d]+)?\s*\-\s*(?P<end>[\d]+)?\s*$')
-    spanpattern     = re.compile(r'^\s*(?P<start>\-?\d+)?\s*(?P<separator>:|(\.{2,}))?\s*(?P<end>\-?\d+)?\s*$')
+    range_pattern    = re.compile(r'^\s*(?P<start>[\d]+)?\s*\-\s*(?P<end>[\d]+)?\s*$')
+    span_pattern     = re.compile(r'^\s*(?P<start>\-?\d+)?\s*(?P<separator>:|(\.{2,}))?\s*(?P<end>\-?\d+)?\s*$')
     
-    def append(self, new):
-        new     = HistoryItem(new)
-        list.append(self, new)
-        new.idx = len(self)
+    def append(self, new_histitem):
         '''
         Appends `new_histitem` to the current History list.
         '''
+        new_histitem     = HistoryItem(new_histitem)
+        list.append(self, new_histitem)
+        new_histitem.idx = len(self)
     
-    def extend(self, new):
-        for n in new:
-            self.append(n)
+    def extend(self, new_histitem):
         '''
         Adds multiple items to the current History list.
         '''
+        for item in new_histitem:
+            self.append(item)
         
-    def get(self, getme=None, fromEnd=False):
+    def get(self, get_histitem=None, from_end=False):
         #   @FIXME
         #       Add DocString
         
         #   @FIXME
         #       Consider using `__getattr__()` or `__getattribute__()` 
         #       instead
-        if not getme:
+        if not get_histitem:
             return self
         try:
-            getme = int(getme)
-            if getme < 0:
-                return self[:(-1 * getme)]
+            get_histitem = int(get_histitem)
+            if get_histitem < 0:
+                return self[:(-1 * get_histitem)]
             else:
-                return [self[getme-1]]
+                return [self[get_histitem-1]]
         except IndexError:
             return []
         except ValueError:
-            rangeResult = self.rangePattern.search(getme)
-            if rangeResult:
-                start       = rangeResult.group('start') or None
-                end         = rangeResult.group('start') or None
+            range_result = self.range_pattern.search(get_histitem)
+            if range_result:
+                start       = range_result.group('start') or None
+                end         = range_result.group('start') or None
                 if start:
                     start   = int(start) - 1
                 if end:
                     end     = int(end)
                 return self[start:end]
                 
-            getme = getme.strip()
+            get_histitem = get_histitem.strip()
 
-            if getme.startswith(r'/') and getme.endswith(r'/'):
-                finder = re.compile(    getme[1:-1], 
+            if get_histitem.startswith(r'/') and get_histitem.endswith(r'/'):
+                finder = re.compile(    get_histitem[1:-1], 
                                         re.DOTALL    | 
                                         re.MULTILINE | 
                                         re.IGNORECASE)
-                def isin(hi):
-                    return finder.search(hi)
+                def isin(hist_item):
+                    return finder.search(hist_item)
             else:
-                def isin(hi):
-                    return (getme.lower() in hi.lowercase)
+                def isin(hist_item):
+                    return (get_histitem.lower() in hist_item.lowercase)
             return [itm for itm in self if isin(itm)]
     
     def search(self, target):
@@ -277,7 +277,7 @@ class History(list):
         #       Add DocString
         if raw.lower() in ('*', '-', 'all'):
             raw = ':'
-        results = self.spanpattern.search(raw)
+        results = self.span_pattern.search(raw)
         if not results:
             raise IndexError
         if not results.group('separator'):
@@ -330,8 +330,8 @@ class Statekeeper:
     def __init__(self, obj, attribs):
         #   @FIXME
         #       Add DocString; what happens on __init__?
-        self.obj    = obj
-        self.attribs= attribs
+        self.obj        = obj
+        self.attribs    = attribs
         if self.obj:
             self.save()
     
@@ -353,7 +353,7 @@ class StubbornDict(dict):
     '''
     Dictionary that tolerates many input formats.
     Create with the `stubbornDict(arg)` factory function.
-    '''    
+    '''
     def __add__(self, other):
         selfcopy = copy.copy(self)
         selfcopy.update(stubbornDict(other))
@@ -383,14 +383,14 @@ class StubbornDict(dict):
         
         #if isinstance(arg, list):
         if hasattr(arg, '__reversed__'):    
-            for a in arg:
-                if not isinstance(a, str):
-                    raise TypeError, "A list arguments to `to_dict()` must only contain strings!" 
+            for arg_item in arg:
+                if not isinstance(arg_item, str):
+                    raise TypeError, "arg_item list arguments to `to_dict()` must only contain strings!" 
                     
-                a = a.strip()
+                arg_item = arg_item.strip()
                 
-                if a:
-                    key_val = a.split(None, 1)
+                if arg_item:
+                    key_val = arg_item.split(None, 1)
                     key     = key_val[0]
                     
                     # print()
@@ -413,53 +413,53 @@ def stubbornDict(*arg, **kwarg):
     #       Add DocString
     
     #   @FIXME
-    #       Why have a factory method instead of 
-    #       making this code into StubbornDict.__init__()?
+    #       Why have a factory method instead 
+    #       putting this into `StubbornDict.__init__()`?
     result = {}
-    for a in arg:
-        result.update(StubbornDict.to_dict(a))
+    for arg_item in arg:
+        result.update(StubbornDict.to_dict(arg_item))
     result.update(kwarg)                      
     return StubbornDict(result)
 
 
-def cast(current, new):
+def cast(current, new_val):
     '''
-    Tries to force a new value into the same type as the current.
+    Tries to force a new_val value into the same type as the current.
     '''
     typ = type(current)
     if typ == bool:
         try:
-            return bool(int(new))
+            return bool(int(new_val))
         except (ValueError, TypeError):
-            pass
+            pass    #   @FIXME: Why pass?
         try:
-            new = new.lower()    
+            new_val = new_val.lower()
         except:
             pass
-        if (new == 'on')  or (new[0] in ('y','t')):
+        if (new_val == 'on')  or (new_val[0] in {'y','t'}):
             return True
-        if (new == 'off') or (new[0] in ('n','f')):
+        if (new_val == 'off') or (new_val[0] in {'n','f'}):
             return False
     else:
         try:
-            return typ(new)
+            return typ(new_val)
         except:
             pass
     print("Problem setting parameter (now %s) to %s; incorrect type?" 
-            % (current, new))
+            % (current, new_val))
     return current
 
 
-def ljust(x, width, fillchar=' '):
+def ljust(lyst, width, fillchar=' '):
     '''
     Works like `str.ljust()` for lists.
     '''
-    if hasattr(x, 'ljust'):
-        return x.ljust(width, fillchar)
+    if hasattr(lyst, 'ljust'):
+        return lyst.ljust(width, fillchar)
     else:
-        if len(x) < width:
-            x = (x + [fillchar] * width)[:width]
-        return x
+        if len(lyst) < width:
+            lyst = (lyst + [fillchar] * width)[:width]
+        return lyst
 
 
 def replace_with_file_contents(fname):

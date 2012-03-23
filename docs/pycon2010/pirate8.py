@@ -1,11 +1,14 @@
-from cmd2 import Cmd, options, make_option
+import  cmd2
+from    cmd2    import  Cmd, options, make_option
 # prompts and defaults
 
 class Pirate(Cmd):
-    gold = 3
-    prompt = 'arrr> '
+    gold    = 3
+    prompt  = 'arrr> '
+    
     def default(self, line):
         print('What mean ye by "{0}"?'.format(line))
+    
     def do_loot(self, arg):
         '''
         Seize booty from a passing ship.
@@ -31,8 +34,7 @@ class Pirate(Cmd):
     
     def postcmd(self, stop, line):   
         if self.gold != self.initial_gold:
-            print('Now we gots {0} doubloons'
-                  .format(self.gold))
+            print('Now we gots {0} doubloons'.format(self.gold))
         if self.gold < 0:
             print("Off to debtorrr's prison.")
             stop = True
@@ -41,25 +43,29 @@ class Pirate(Cmd):
     def do_quit(self, arg):
         print("Quiterrr!")
         return True    
-    default_to_shell = True
-    multiline_commands = ['sing']
+    
+    default_to_shell    = True
+    multiline_commands  = ['sing']
     terminators = Cmd.terminators + ['...']
-    songcolor = 'blue'
-    settable = Cmd.settable + 'songcolor Color to ``sing`` in (red/blue/green/cyan/magenta, bold, underline)'
+    songcolor   = 'blue'
+    settable    = Cmd.settable + 'songcolor     Color to `sing` in (red/blue/green/cyan/magenta, bold, underline)'
     Cmd.shortcuts.update({'~': 'sing'})
+    
     def do_sing(self, arg):
         print(self.colorize(arg, self.songcolor))
-    @options([make_option('--ho', type='int', default=2,
-                          help="How often to chant 'ho'"),
-              make_option('-c', '--commas',
-                          action="store_true", 
-                          help="Intersperse commas")])
+    
+    @options([make_option(  '--ho', 
+                            type    = 'int', 
+                            default = 2,
+                            help    = 'How often to chant "ho"'),
+              make_option(  '-c', '--commas',
+                            action  = 'store_true', 
+                            help    = 'Intersperse commas')])
     def do_yo(self, arg, opts):
         chant = ['yo'] + ['ho'] * opts.ho
         separator = ', ' if opts.commas else ' '
         chant = separator.join(chant)
-        print('{0} and a bottle of {1}'
-              .format(chant, arg))
+        print('{0} and a bottle of {1}'.format(chant, arg))
 
 pirate = Pirate()
 pirate.cmdloop()

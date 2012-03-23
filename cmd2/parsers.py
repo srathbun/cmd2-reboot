@@ -73,17 +73,6 @@ class OptionParser(optparse.OptionParser):
             pass
         optparse.OptionParser.print_help(self, *args, **kwargs)
 
-    def error(self, msg):
-        '''
-        error(msg : string)
-
-        Prints a usage message incorporating `msg` to `stderr`, then exits.
-        
-        If you override this in a subclass, it should NOT return!
-        It should exit *OR* raise an exception.
-        '''
-        raise optparse.OptParseError(msg)
-
 
 class ParsedString(str):
     #   @FIXME
@@ -116,9 +105,9 @@ def remaining_args(oldargs, newarg_list):
     #   @FIXME
     #       Consider moving inside the OptionParser class
     
-    pattern     = '\s+'.join( re.escape(a) for a in newarg_list ) + '\s*$'
-    matchObj    = re.search(pattern, oldargs)
-    return oldargs[matchObj.start():]
+    pattern         = '\s+'.join( re.escape(a) for a in newarg_list ) + '\s*$'
+    matching_obj    = re.search(pattern, oldargs)
+    return oldargs[matching_obj.start():]
 
 
 options_defined = [] # used to tell apart --options from SQL-style --comments
@@ -157,43 +146,43 @@ def options(option_list, arg_desc='arg'):
         option_list = [option_list]
     
     for opt in option_list:
-        optstr = opt.get_opt_string()
-        options_defined.append(pyparsing.Literal(optstr))
+        opt_str = opt.get_opt_string()
+        options_defined.append(pyparsing.Literal(opt_str))
     
     def option_setup(func):
-        optionParser = OptionParser()
         '''
         Does the option-setup and returns the decorated method.
         '''
+        opt_parser = OptionParser()
         for opt in option_list:
-            optionParser.add_option(opt)
-        optionParser.set_usage("%s [options] %s" % ( func.__name__[3:], arg_desc) )
-        optionParser._func = func
+            opt_parser.add_option(opt)
+        opt_parser.set_usage("%s [options] %s" % ( func.__name__[3:], arg_desc) )
+        opt_parser._func = func
         
         def new_func(instance, arg):
             '''
             Modifies the decorated function and returns it.
             '''
             try:
-                opts, newArgList = optionParser.parse_args(arg.split())
+                opts, new_arglist = opt_parser.parse_args(arg.split())
                 # Must find the remaining args in the original argument list, but 
                 # mustn't include the command itself
-                #if hasattr(arg, 'parsed') and newArgList[0] == arg.parsed.command:
-                #    newArgList = newArgList[1:]
-                newArgs = remaining_args(arg, newArgList)
+                #if hasattr(arg, 'parsed') and new_arglist[0] == arg.parsed.command:
+                #    new_arglist = new_arglist[1:]
+                new_args = remaining_args(arg, new_arglist)
                 if isinstance(arg, ParsedString):
-                    arg = arg.with_args_replaced(newArgs)
+                    arg = arg.with_args_replaced(new_args)
                 else:
-                    arg = newArgs
-            except optparse.OptParseError, e:
-                print(e,"\n")
-                optionParser.print_help()
+                    arg = new_args
+            except optparse.OptParseError, err:
+                print(err,"\n")
+                opt_parser.print_help()
                 return
             if hasattr(opts, '_exit'):
                 return None
-            result = func(instance, arg, opts)                            
-            return result        
-        new_func.__doc__ = '%s\n%s' % (func.__doc__, optionParser.format_help())
+            return func(instance, arg, opts)
+        
+        new_func.__doc__ = '%s\n%s' % (func.__doc__, opt_parser.format_help())
         return new_func
     
     return option_setup

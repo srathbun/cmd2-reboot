@@ -27,7 +27,7 @@ __all__         =   [   'EmbeddedConsoleExit',
                         'EmptyStatement',
                         'NotSettableError',
                         'PasteBufferError',
-                        'pastebufferr']
+                        'PASTEBUFF_ERR']
 
 __version__     = '0.6.5'
 __copyright__   = '?'   #@FIXME
@@ -40,7 +40,7 @@ __maintainer__  = '?'   #@FIXME
 __credits__     = '?'   #@FIXME
 
 
-pastebufferr =  ''' Redirecting to or from paste buffer requires %s
+PASTEBUFF_ERR =  ''' Redirecting to or from paste buffer requires %s
                     to be installed on operating system.
                     %s
                 '''
