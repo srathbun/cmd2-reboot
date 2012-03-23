@@ -1,61 +1,59 @@
-----
-cmd2
-----
+#   cmd2
 
-:Author: Catherine Devlin, http://catherinedevlin.blogspot.com
+
+**Author:**<br>
+Catherine Devlin <br>
+http://catherinedevlin.blogspot.com
 
 `cmd2` is a tool for writing command-line interactive applications.  It is based on the Python Standard Library's `cmd` module, and can be used anyplace `cmd` is used simply by importing `cmd2` instead.
 
 `cmd2` provides the following features, in addition to those already existing in `cmd`:
 
-- Searchable command history
-- Load commands from file, save to file, edit commands in file
-- Multi-line commands
-- Case-insensitive commands
-- Special-character shortcut commands (beyond cmd's `@` and `!`)
-- Settable environment parameters
-- Parsing commands with flags
-- Redirection to file with `>`, `>>`; input from file with `<`
-- Bare '>', '>>' with no filename send output to paste buffer
-- Pipe output to shell commands with `|`
-- Simple transcript-based application testing
+ * Searchable command history
+ * Load commands from file, save to file, edit commands in file
+ * Multi-line commands
+ * Case-insensitive commands
+ * Special-character shortcut commands (beyond cmd's `@` and `!`)
+ * Settable environment parameters
+ * Parsing commands with flags
+ * Redirection to file with `>`, `>>`; input from file with `<`
+ * Bare `>`, `>>` with no filename send output to paste buffer
+ * Pipe output to shell commands with `|`
+ * Simple transcript-based application testing
 
-Instructions for implementing each feature follow.
+Instructions for implementing each feature follow:
 
-- Searchable command history
+## Searchable command history
 
-    All commands will automatically be tracked in the session's history, unless the command is listed in Cmd's excludeFromHistory attribute.  
-    The history is accessed through the `history`, `list`, and `run` commands 
-    (and their abbreviations: `hi`, `li`, `l`, `r`).
-    If you wish to exclude some of your custom commands from the history, append their names
-    to the list at Cmd.ExcludeFromHistory.
+All commands will automatically be tracked in the session's history, unless the command is listed in `Cmd`'s `hist_exclude` attribute.  
 
-- Load commands from file, save to file, edit commands in file
+The history is accessed through the `history`, `list`, and `run` commands (and their abbreviations: `hi`, `li`, `l`, `r`).
 
-    Type `help load`, `help save`, `help edit` for details.
+If you wish to exclude some of your custom commands from the history, append their names to the list at `Cmd.hist_exclude`.
+
+## Load commands from file, save to file, edit commands in file
+
+Type `help load`, `help save`, `help edit` for details.
   
-- Multi-line commands
+## Multi-line commands
 
-    Any command accepts multi-line input when its name is listed in `Cmd.multilineCommands`.
-    The program will keep expecting input until a line ends with any of the characters 
-    in `Cmd.terminators` .  The default terminators are `;` and `/n` (empty newline).
+Any command accepts multi-line input when its name is listed in `Cmd.multiln_commands`.
+
+The program will keep expecting input until a line ends with any of the characters in `Cmd.terminators` .  The default terminators are `;` and `/n` (an empty newline).
     
-- Case-insensitive commands
+## Case-insensitive commands
 
-    All commands are case-insensitive, unless `Cmd.caseInsensitive` is set to `False`.
+All commands are case-insensitive, unless `Cmd.case_insensitive` is set to `False`.
   
-- Special-character shortcut commands (beyond cmd's "@" and "!")
+## Special-character shortcut commands (beyond `cmd`'s `@` and `!`)
 
-    To create a single-character shortcut for a command, update `Cmd.shortcuts`.
+To create a single-character shortcut for a command, update `Cmd.shortcuts`.
   
-- Settable environment parameters
+## Settable environment parameters
 
-    To allow a user to change an environment parameter during program execution, 
-    append the parameter's name to `Cmd.settable`.
+To allow a user to change an environment parameter during program execution, append the parameter's name to `Cmd.settable`.
     
-- Parsing commands with `optparse` options (flags) 
-
-    ::
+## Parsing commands with `optparse` options (flags)
     
         @options([make_option('-m', '--myoption', action="store_true", help="all about my option")])
         def do_myfunc(self, arg, opts):
@@ -64,11 +62,13 @@ Instructions for implementing each feature follow.
             
     See Python standard library's `optparse` documentation: http://docs.python.org/lib/optparse-defining-options.html
     
-cmd2 can be installed with `easy_install cmd2`
+`cmd2` can be installed with `pip install cmd2`
 
-Cheese Shop page: http://pypi.python.org/pypi/cmd2
 
-Example cmd2 application (example/example.py) ::
+**Cheese Shop page:**
+http://pypi.python.org/pypi/cmd2
+
+Example `cmd2` application (`example/example.py`) :
 
     '''A sample application for cmd2.'''
     
@@ -116,14 +116,15 @@ Example cmd2 application (example/example.py) ::
         app = CmdLineApp()
         app.cmdloop()
 
-The following is a sample session running example.py.
+The following is a sample session running `example.py`.
 Thanks to `TestMyAppCase(Cmd2TestCase)`, it also serves as a test 
 suite for example.py when saved as `exampleSession.txt`.  
+
 Running `python example.py -t` will run all the commands in the
 transcript against `example.py`, verifying that the output produced
 matches the transcript.
 
-example/exampleSession.txt::
+`example/exampleSession.txt`:
 
     (Cmd) help
     
