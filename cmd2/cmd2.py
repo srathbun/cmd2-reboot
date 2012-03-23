@@ -8,7 +8,7 @@ from    __future__  import  generators,         \
 
 #   six: Python 2/3 Compatibility module
 #   --------------------------------------------------------
-#   Six should (after __future__) get imported first,
+#   `six` should (after `__future__`) get imported first,
 #   because it deals with the different standard libraries
 #   between Python 2 and 3.
 import  six
@@ -154,7 +154,7 @@ class Cmd(cmd.Cmd):
     timing              = False     # Prints elapsed time for each command
     
     # make sure your terminators are not in legal_chars!
-    legal_chars          = u'!#$%.:?@_' + pyparsing.alphanums + pyparsing.alphas8bit
+    legal_chars         = u'!#$%.:?@_' + pyparsing.alphanums + pyparsing.alphas8bit
     shortcuts           = { '?' : 'help' , 
                             '!' : 'shell', 
                             '@' : 'load' , 
@@ -404,10 +404,10 @@ class Cmd(cmd.Cmd):
         input_from.setParseAction(replace_with_file_contents)
         # a not-entirely-satisfactory way of distinguishing < as in "import from" 
         # from < as in "lesser than"
-        self.input_parser = input_mark                     + \
-                            pyparsing.Optional(input_from) + \
-                            pyparsing.Optional('>')       + \
-                            pyparsing.Optional(filename)  + \
+        self.input_parser = input_mark                      + \
+                            pyparsing.Optional(input_from)  + \
+                            pyparsing.Optional('>')         + \
+                            pyparsing.Optional(filename)    + \
                             (pyparsing.stringEnd | '|')
         self.input_parser.ignore(self.comment_in_progress)               
     
@@ -575,7 +575,7 @@ class Cmd(cmd.Cmd):
     #       Shouldn't this method start with an underscore?
     def func_named(self, arg):
         '''
-        This method searches all "do_" methods for a match with `arg`.  It 
+        This method searches all `do_` methods for a match with `arg`.  It 
         returns the matched method.
         
         If no exact matches are found, it searches for shortened versions
@@ -618,7 +618,7 @@ class Cmd(cmd.Cmd):
         
     def onecmd_plus_hooks(self, line):
         '''
-        Runs `omecmd()` with calls to hook methods at the appropriate places.
+        Runs `onecmd()` with calls to hook methods at the appropriate places.
         '''
         # The outermost level of try/finally nesting can be condensed
         # once Python 2.4 support can be dropped.
