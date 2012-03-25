@@ -571,9 +571,7 @@ class Cmd(cmd.Cmd):
         '''
         return stop
     
-    #   @FIXME
-    #       Shouldn't this method start with an underscore?
-    def func_named(self, arg):
+    def _func_named(self, arg):
         '''
         This method searches all `do_` methods for a match with `arg`.  It 
         returns the matched method.
@@ -606,7 +604,7 @@ class Cmd(cmd.Cmd):
         '''
         statement    = self.parsed(line)
         self.lastcmd = statement.parsed.raw   
-        funcname     = self.func_named(statement.parsed.command)
+        funcname     = self._func_named(statement.parsed.command)
         if not funcname:
             return self._default(statement)
         try:
@@ -904,7 +902,7 @@ class Cmd(cmd.Cmd):
         #       Add DocString 
         #       (How is this different from `cmd.do_help()`?)
         if arg:
-            funcname = self.func_named(arg)
+            funcname = self._func_named(arg)
             if funcname:
                 func  = getattr(self, funcname)
                 try:
