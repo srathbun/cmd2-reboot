@@ -114,7 +114,7 @@ if six.PY3:
 #       *   using `__getattr__()` instead
 def _attr_get_(obj, attr):
     '''
-    Returns an attribute's value (or None if undefined; no error).
+    Returns an attribute's value (or `None` if undefined; no error).
     Analagous to `.get()` for dictionaries.  
     
     Useful when checking for the value of options that may not have 
@@ -269,7 +269,7 @@ class Cmd(cmd.Cmd):
 #                                     'ruler',
 #                                     'undoc_header',
 #                                     'use_rawinput'})
-#         
+
 #         self.settings_from_cmd2 = ( 'abbrev',
 #                                     'case_insensitive',
 #                                     'continuation_prompt',
@@ -290,7 +290,7 @@ class Cmd(cmd.Cmd):
 #                                     'reserved_words',
 #                                     'shortcuts',
 #                                     'timing')
-# 
+
 #         self.settings_for_parsing = ('abbrev',
 #                                      'case_insensitive',
 #                                      'default_to_shell',
