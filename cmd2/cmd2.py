@@ -256,7 +256,7 @@ class Cmd(cmd.Cmd):
         self.initial_stdout = sys.stdout
         self.history        = History()
         self.pystate        = {}
-        
+
 #         self.settings_from_cmd = frozenset({
 #                                     'doc_header',
 #                                     'doc_leader',
@@ -300,15 +300,11 @@ class Cmd(cmd.Cmd):
 #                                      'redirector',
 #                                      'reserved_words',
 #                                      'shortcuts')
-        self.shortcuts      = sorted(self.shortcuts.items(), reverse=True)
         
         
         #   @FIXME
-        #       Refactor into parsing module
-        self.keywords       =   self.reserved_words + [fname[3:] for fname in dir(self) if fname.startswith('do_')]        
-        self.save_parser    = ( pyparsing.Optional(pyparsing.Word(pyparsing.nums)^'*')('idx')           + 
-                                pyparsing.Optional(pyparsing.Word(self.legal_chars + '/\\'))('fname')   +
-                                pyparsing.stringEnd)
+        #       Why does this need to have `reverse=True`?
+        self.shortcuts      = sorted(self.shortcuts.items(), reverse=True)
         
         #   @FIXME
         #       Refactor into parsing module
@@ -329,35 +325,44 @@ class Cmd(cmd.Cmd):
         #   @FIXME
         #       Add docstring
         
+        self.keywords       =   self.reserved_words + [fname[3:] for fname in dir(self) if fname.startswith('do_')]        
+        self.save_parser    = ( pyparsing.Optional(pyparsing.Word(pyparsing.nums)^'*')('idx')           + 
+                                pyparsing.Optional(pyparsing.Word(self.legal_chars + '/\\'))('fname')   +
+                                pyparsing.stringEnd)
+        
         terminator_parser       =   pyparsing.Or([
                                         (hasattr(t, 'parseString') and t)
                                         or pyparsing.Literal(t) for t in self.terminators
                                     ])('terminator')
+        
         string_end              =   pyparsing.stringEnd ^ '\nEOF'
+        
         self.multiline_command  =   pyparsing.Or([
                                         pyparsing.Keyword(c, caseless=self.case_insensitive) 
                                         for c in self.multiline_commands
                                     ])('multiline_command')
+        
         oneln_command           =   (   ~self.multiline_command + 
                                         pyparsing.Word(self.legal_chars)
                                     )('command')
+        
         pipe                    =   pyparsing.Keyword('|', identChars='|')
+        
         self.comment_grammars.ignore(pyparsing.quotedString).setParseAction(lambda x: '')
+        
         do_not_parse            =   self.comment_grammars       |   \
                                     self.comment_in_progress    |   \
                                     pyparsing.quotedString
         
         #   moved here from class-level variable
-        self.urlre = re.compile('(https?://[-\\w\\./]+)')
+        self.urlre              =   re.compile('(https?://[-\\w\\./]+)')
         
         #output_parser = (pyparsing.Literal('>>') | (pyparsing.WordStart() + '>') | pyparsing.Regex('[^=]>'))('output')
-        output_parser = (pyparsing.Literal(   2 * self.redirector) | \
-                        (pyparsing.WordStart()  + self.redirector) | \
-                        pyparsing.Regex('[^=]' + self.redirector))('output')
+        output_parser           =  (pyparsing.Literal(   2 * self.redirector) | \
+                                   (pyparsing.WordStart()  + self.redirector) | \
+                                    pyparsing.Regex('[^=]' + self.redirector))('output')
 
-        
-        
-        after_elements           = pyparsing.Optional( pipe + 
+        after_elements          =   pyparsing.Optional( pipe + 
                                                         pyparsing.SkipTo(
                                                             output_parser ^ string_end,       \
                                                             ignore=do_not_parse)('pipeTo')) + \
@@ -368,24 +373,29 @@ class Cmd(cmd.Cmd):
                                                                 ignore=do_not_parse
                                                             ).setParseAction(lambda x: x[0].strip())('outputTo')
                                                         )
-        
+                                                        
         if self.case_insensitive:
             self.multiline_command.setParseAction(lambda x: x[0].lower())
             oneln_command.setParseAction(lambda x: x[0].lower())
+        
         if self.allow_blank_lines:
             self.blankln_termination_parser = pyparsing.NoMatch
         else:
             self.blankln_terminator = (pyparsing.lineEnd + pyparsing.lineEnd)('terminator')
             self.blankln_terminator.setResultsName('terminator')
             self.blankln_termination_parser = ((self.multiline_command ^ oneln_command) + pyparsing.SkipTo(self.blankln_terminator, ignore=do_not_parse).setParseAction(lambda x: x[0].strip())('args') + self.blankln_terminator)('statement')
+        
         self.multiln_parser = (((self.multiline_command ^ oneln_command) + pyparsing.SkipTo(terminator_parser, ignore=do_not_parse).setParseAction(lambda x: x[0].strip())('args') + terminator_parser)('statement') + \
                                 pyparsing.SkipTo(output_parser ^ pipe ^ string_end, ignore=do_not_parse).setParseAction(lambda x: x[0].strip())('suffix') + after_elements)
         self.multiln_parser.ignore(self.comment_in_progress)
+        
         self.singleln_parser  = ((oneln_command + pyparsing.SkipTo(terminator_parser ^ string_end ^ pipe ^ output_parser, ignore=do_not_parse).setParseAction(lambda x:x[0].strip())('args'))('statement') + \
                                  pyparsing.Optional(terminator_parser) + after_elements)
         #self.multiln_parser  = self.multiln_parser.setResultsName('multiln_parser')
         #self.singleln_parser = self.singleln_parser.setResultsName('singleln_parser')
+        
         self.blankln_termination_parser = self.blankln_termination_parser.setResultsName('statement')
+        
         self.parser = self.prefix_parser + (string_end                      |
                                             self.multiln_parser             |
                                             self.singleln_parser            |
@@ -402,6 +412,7 @@ class Cmd(cmd.Cmd):
         filename    = pyparsing.Word(self.legal_chars + '/\\')
         input_from  = filename('input_from')
         input_from.setParseAction(replace_with_file_contents)
+        
         # a not-entirely-satisfactory way of distinguishing < as in "import from" 
         # from < as in "lesser than"
         self.input_parser = input_mark                      + \
