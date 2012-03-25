@@ -23,12 +23,6 @@ import  six
 import  sys,        \
         traceback
 
-__all__         =   [   'EmbeddedConsoleExit',
-                        'EmptyStatement',
-                        'NotSettableError',
-                        'PasteBufferError',
-                        'PASTEBUFF_ERR']
-
 __version__     = '0.6.5'
 __copyright__   = '?'   #@FIXME
 __license__     = '?'   #@FIXME
@@ -38,6 +32,13 @@ __author__      = 'Catherine Devlin'
 __email__       = '?'   #@FIXME
 __maintainer__  = '?'   #@FIXME
 __credits__     = '?'   #@FIXME
+
+
+__all__         =   [   'EmbeddedConsoleExit',
+                        'EmptyStatement',
+                        'NotSettableError',
+                        'PasteBufferError',
+                        'PASTEBUFF_ERR']
 
 
 PASTEBUFF_ERR =  ''' Redirecting to or from paste buffer requires %s
@@ -58,8 +59,10 @@ class EmptyStatement(Exception):
 
 
 class NotSettableError(Exception):
-    #   @FIXME
-    #       Add docstring; what does this Error represent?
+    '''
+    This error should be raised when attempting to change
+    any setting that isn't listed in `Cmd.settable`.
+    '''
     pass
 
 
@@ -72,9 +75,9 @@ class PasteBufferError(EnvironmentError):
                     Redirecting to or from paste buffer requires pywin32
                     to be installed on operating system.
                     
-                    Download from: 
-                    
-                    http://sourceforge.net/projects/pywin32/'''
+                    Download: 
+                    http://sourceforge.net/projects/pywin32/
+                '''
     elif sys.platform[:3] == 'dar':
         # Use built in pbcopy on Mac OSX
         pass
@@ -83,9 +86,9 @@ class PasteBufferError(EnvironmentError):
                     Redirecting to or from paste buffer requires xclip 
                     to be installed on operating system.
                     
-                    To install on Debian/Ubuntu:
+                    To install (Debian/Ubuntu):
                     
                     `sudo apt-get install xclip`
-                '''        
+                '''
     def __init__(self):
         Exception.__init__(self, self.errmsg)
