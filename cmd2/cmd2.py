@@ -459,8 +459,8 @@ class Cmd(cmd.Cmd):
                                     ).setParseAction(lambda x:x[0].strip())('args'))('statement')
                                 + PYP.Optional(TERMINATOR_PARSER)
                                 + AFTER_ELEMENTS)
-        #self.multiln_parser  = self.multiln_parser.setResultsName('multiln_parser')
-        #self.singleln_parser = self.singleln_parser.setResultsName('singleln_parser')
+        #self.multiln_parser  = self.multiln_parser('multiln_parser')
+        #self.singleln_parser = self.singleln_parser('singleln_parser')
         
         
         #   Configure according to `allow_blank_lines` setting
@@ -468,7 +468,7 @@ class Cmd(cmd.Cmd):
             self.blankln_termination_parser = PYP.NoMatch
         else:
             self.blankln_terminator = (PYP.lineEnd + PYP.lineEnd)('terminator')
-            self.blankln_terminator.setResultsName('terminator')
+            self.blankln_terminator('terminator')
             self.blankln_termination_parser = (
                                                 (self.multiline_command ^ ONELN_COMMAND) 
                                                 + PYP.SkipTo(
@@ -477,7 +477,7 @@ class Cmd(cmd.Cmd):
                                                 ).setParseAction(lambda x: x[0].strip())('args') 
                                                 + self.blankln_terminator)('statement')
 
-        self.blankln_termination_parser = self.blankln_termination_parser.setResultsName('statement')
+        self.blankln_termination_parser = self.blankln_termination_parser('statement')
         
         self.parser = self.prefix_parser + (STRING_END                      |
                                             self.multiln_parser             |
