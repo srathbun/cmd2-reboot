@@ -819,7 +819,7 @@ class Cmd(cmd.Cmd):
         if isinstance(fname, file):
             result = open(fname, 'r')
         else:
-            match   = self.urlre.match(fname)
+            match   = self.URLRE.match(fname)
             if match:
                 result  = urllib.urlopen(match.group(1))
             else:
