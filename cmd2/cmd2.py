@@ -143,6 +143,7 @@ class Cmd(cmd.Cmd):
     
     
     #   @FIXME
+    #       CURRENT IDEA (subject to change):
     #       Refactor into a Settings class, subdivided into:
     #       -   settable/not-settable
     #       -   input-related settings (parsing, case-sensitivity, shortcuts, etc.)
@@ -166,11 +167,11 @@ class Cmd(cmd.Cmd):
     default_file_name   = 'command.txt' # For `save`, `load`, etc.
     default_to_shell    = False
     default_extension   = 'txt'         # For `save`, `load`, etc.
-    hist_exclude        = 'run r list l history hi ed edit li eof'.split()
+    hist_exclude        = {'run','r','list','l','history','hi','ed','edit','li','eof'}
     feedback_to_output  = False         # Do include nonessentials in >, | output
     kept_state          = None
     locals_in_py        = True
-    no_special_parse    = 'set ed edit exit'.split()
+    no_special_parse    = {'set','ed','edit','exit'}
     quiet               = False         # Do not suppress nonessential output
     redirector          = '>'           # for sending output to file
     reserved_words      = []
