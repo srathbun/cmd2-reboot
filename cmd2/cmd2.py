@@ -517,11 +517,13 @@ class Cmd(cmd.Cmd):
                 import readline
                 self.old_completer = readline.get_completer()
                 readline.set_completer(self.complete)
-                readline.parse_and_bind(self.completekey+': complete')
+                readline.parse_and_bind(self.completekey + ': complete')
             except ImportError:
+                #   @FIXME
+                #       Why is this passed?
                 pass
         try:
-            if intro is not None:
+            if intro:
                 self.intro = intro
             if self.intro:
                 self.stdout.write(str(self.intro) + "\n")
@@ -531,7 +533,7 @@ class Cmd(cmd.Cmd):
                     line = self.cmdqueue.pop(0)
                 else:
                     line = self.pseudo_raw_input(self.prompt)
-                if (self.echo) and (isinstance(self.stdin, file)):
+                if self.echo and (isinstance(self.stdin, file)):
                     self.stdout.write(line + '\n')
                 stop = self.onecmd_plus_hooks(line)
             self.postloop()
@@ -541,6 +543,8 @@ class Cmd(cmd.Cmd):
                     import readline #   okay to *re-import* readline?
                     readline.set_completer(self.old_completer)
                 except ImportError:
+                    #   @FIXME
+                    #       Why is this passed?
                     pass    
             return stop
 
