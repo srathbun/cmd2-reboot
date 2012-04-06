@@ -614,111 +614,30 @@ class Cmd(cmd.Cmd):
                     result = 'do_' + funcs[0]
         return result
     
-    def poutput(self, msg):
+    def cmdloop(self):
         '''
-        Shortcut for `self.stdout.write()`. (Adds newline if necessary.)
+        Initializes a parser and runs `_cmdloop()`.
         '''
-        if msg:
-            self.stdout.write(msg)
-            if msg[-1] is not '\n':
-                self.stdout.write('\n')
-    
-    def perror(self, errmsg, statement=None):
-        '''
-        Prints `errmsg`.  Includes a traceback if `debug` is `True`.
-        '''
-        if self.debug:
-            traceback.print_exc()
-        print( str(errmsg) )
-    
-    def pfeedback(self, msg):
-        '''
-        For printing nonessential feedback.  Can be silenced with `quiet`.
-        `feedback_to_output` controls whether to include in redirected output.
-        '''
-        if not self.quiet:
-            if self.feedback_to_output:
-                self.poutput(msg)
-            else:
-                print(msg)
-    
-    def colorize(self, val, color):
-        '''
-        Given a string (`val`), returns that string wrapped in UNIX-style 
-        special characters that turn on (and then off) text color and style.
-        If the `colors` environment variable is `False`, or the application
-        is running on Windows, will return `val` unchanged.
         
-        `color` should be one of the supported strings (or styles):
-       
-        red/blue/green/cyan/magenta, bold, underline
-        '''
-        if self.colors and (self.stdout == self.initial_stdout):
-            return  self.colorcodes[color][True] + \
-                    val                          + \
-                    self.colorcodes[color][False]
-        return val
-
-    def preparse(self, raw, **kwargs):
-        '''
-        This is a hook for subclasses to process input before it gets parsed. It 
-        does nothing by default.
-        '''
-        return raw
-    
-    def postparse(self, parse_result):
-        '''
-        This is a hook for subclasses to process input after it gets parsed. It 
-        does nothing by default.
-        '''
-        return parse_result
-   
-    #   @FIXME
-    #       Refactor into parsers.py
-    def parsed(self, raw, **kwargs):
         #   @FIXME
-        #       Add DocString
-        if isinstance(raw, ParsedString):
-            parsed_str = raw
-        else:
-            # preparse is an overridable hook; default makes no changes
-            parsed_str = self.preparse(raw, **kwargs).lstrip()
-            parsed_str = self.input_parser.transformString(parsed_str)
-            parsed_str = self.comment_grammars.transformString(parsed_str)
-            for (shortcut, expansion) in self.shortcuts:
-                if parsed_str.lower().startswith(shortcut):
-                    parsed_str = parsed_str.replace(shortcut, expansion + ' ', 1)
-                    break
-            result              = self.parser.parseString(parsed_str)
-            result['raw']       = raw            
-            result['command']   = result.multiline_command or result.command        
-            result              = self.postparse(result)
-            parsed_str               = ParsedString(result.args)
-            parsed_str.parsed        = result
-            parsed_str.parser        = self.parsed
-        for (key, val) in kwargs:
-            parsed_str.parsed[key] = val
-        return parsed_str
-              
-    def postparsing_precmd(self, statement):
-        '''
-        This is a hook for subclasses to process parsed input before
-        any command receives it.  
+        #       Why isn't this using cmd2's own OptionParser?
+        parser = optparse.OptionParser()
+        parser.add_option(  '-t', 
+                            '--test', 
+                            dest    ='test',
+                            action  ='store_true', 
+                            help    ='Test against transcript(s) in FILE (accepts wildcards)')
+        (callopts, callargs) = parser.parse_args()
         
-        It does nothing by default.
-        '''
-        stop = 0
-        return stop, statement
-    
-    def postparsing_postcmd(self, stop):
-        '''
-        This is a hook for subclasses to process parsed input after a command
-        has received it an finished execution.
+        #if callopts.test:
+        #    self.runTranscriptTests(callargs)
+        #else:
+        #    if not self.run_commands_at_invocation(callargs):
+        #        self._cmdloop() 
         
-        It does nothing by default.
-        '''
-        return stop
-    
+        if not self.run_commands_at_invocation(callargs):
+            self._cmdloop() 
+         
     def onecmd(self, line):
         '''
         Interpret the argument as though it had been typed in response
@@ -778,8 +697,61 @@ class Cmd(cmd.Cmd):
             except Exception, err:
                 self.perror(str(err), statement)
         finally:
-            return self.postparsing_postcmd(stop)        
+            return self.postparsing_postcmd(stop)         
     
+    def run_commands_at_invocation(self, callargs):
+        '''
+        Runs commands in `omecmd_plus_hooks` before executing callargs.
+        '''
+        for initial_command in callargs:
+            if self.onecmd_plus_hooks(initial_command + '\n'):
+                return self._STOP_AND_EXIT
+
+
+    #-----------------------------------------------------
+    #   HOOKS
+    #   ========
+    #   Hook methods
+    #-----------------------------------------------------
+    def preparse(self, raw, **kwargs):
+        '''
+        This is a hook for subclasses to process input before it gets parsed. It 
+        does nothing by default.
+        '''
+        return raw
+    
+    def postparse(self, parse_result):
+        '''
+        This is a hook for subclasses to process input after it gets parsed. It 
+        does nothing by default.
+        '''
+        return parse_result
+   
+    def postparsing_precmd(self, statement):
+        '''
+        This is a hook for subclasses to process parsed input before
+        any command receives it.  
+        
+        It does nothing by default.
+        '''
+        stop = 0
+        return stop, statement
+    
+    def postparsing_postcmd(self, stop):
+        '''
+        This is a hook for subclasses to process parsed input after a command
+        has received it an finished execution.
+        
+        It does nothing by default.
+        '''
+        return stop
+    
+    
+    #-----------------------------------------------------
+    #   INPUT
+    #   ========
+    #   Methods related to Input
+    #-----------------------------------------------------
     def complete_statement(self, line):
         '''
         Keep accepting lines of input until the command is complete.
@@ -800,6 +772,204 @@ class Cmd(cmd.Cmd):
         if not statement.parsed.command:
             raise EmptyStatement
         return statement
+    
+    def fileimport(self, statement, source):
+        '''
+        Reads `source` from a file and returns its contents.
+        '''
+        
+        #   @FIXME
+        #       Unused argument: `statement`
+        try:
+            fyle = open(os.path.expanduser(source))
+        except IOError:
+            #   @FIXME
+            #       Why doesn't this use `self.poutput()` or `self.perror()`?
+            self.stdout.write("Couldn't read from file %s\n" % source)
+            return ''
+        data = fyle.read()
+        fyle.close()
+        return data
+
+    def last_matching(self, arg):
+        '''
+        Gets the most recent history match for `arg`.
+        '''
+        
+        #   @FIXME
+        #       Consider refactoring into 
+        #       `History` class (in `support` module)
+        try:
+            if arg:
+                return self.history.get(arg)[-1]
+            else:
+                return self.history[-1]
+        except IndexError:
+            return None        
+    
+    #   @FIXME
+    #       Refactor into parsers.py
+    def parsed(self, raw, **kwargs):
+        #   @FIXME
+        #       Add DocString
+        if isinstance(raw, ParsedString):
+            parsed_str = raw
+        else:
+            # preparse is an overridable hook; default makes no changes
+            parsed_str = self.preparse(raw, **kwargs).lstrip()
+            parsed_str = self.input_parser.transformString(parsed_str)
+            parsed_str = self.comment_grammars.transformString(parsed_str)
+            for (shortcut, expansion) in self.shortcuts:
+                if parsed_str.lower().startswith(shortcut):
+                    parsed_str = parsed_str.replace(shortcut, expansion + ' ', 1)
+                    break
+            result              = self.parser.parseString(parsed_str)
+            result['raw']       = raw            
+            result['command']   = result.multiline_command or result.command        
+            result              = self.postparse(result)
+            parsed_str               = ParsedString(result.args)
+            parsed_str.parsed        = result
+            parsed_str.parser        = self.parsed
+        for (key, val) in kwargs:
+            parsed_str.parsed[key] = val
+        return parsed_str
+              
+    def pseudo_raw_input(self, prompt):
+        '''
+        Extracted from `cmd.cmdloop()`. Similar to `raw_input()`, but 
+        accounts for changed stdin/stdout.
+        '''
+        
+        if self.use_rawinput:
+            try:
+                line = raw_input(prompt)
+            except EOFError:
+                line = 'EOF'
+        else:
+            self.stdout.write(prompt)
+            self.stdout.flush()
+            line = self.stdin.readline()
+            if not len(line):
+                line = 'EOF'
+            else:
+                if line[-1] == '\n': # this was always true in Cmd
+                    line = line[:-1] 
+        return line
+    
+    def read_file_or_url(self, fname):
+        '''
+        Opens `fname` as a file.  Accounts for user tilde expansion and URLs.
+        '''
+        #   @FIXME
+        #       TODO: not working on localhost
+        
+        #   @FIXME
+        #       Rewrite for readability and less
+        #       indent-hell
+        if isinstance(fname, file):
+            result = open(fname, 'r')
+        else:
+            match   = self.URLRE.match(fname)
+            if match:
+                result  = urllib.urlopen(match.group(1))
+            else:
+                fname   = os.path.expanduser(fname)
+                try:
+                    result  = open( os.path.expanduser(fname), 'r')
+                except IOError:                    
+                    result  = open('%s.%s' % (os.path.expanduser(fname), 
+                                              self.default_extension), 
+                                    'r')
+        return result
+        
+    def select(self, choices, prompt='Your choice? '):
+        '''
+        Presents a numbered menu to the user.  Returns the item chosen.
+        (Modeled after the bash shell's `SELECT`.)
+           
+           Argument `choices` can be:
+
+             | a single string      -> split into one-word choices
+             | a list of strings    -> will be offered as choices
+             | a list of tuples     -> interpreted as (value, text), so 
+                                       that the return value can differ from
+                                       the text advertised to the user
+        '''
+        if isinstance(choices, six.string_types):
+            choices = zip(choices.split(), choices.split())
+        fullchoices = []
+        for item in choices:
+            if isinstance(item, six.string_types):
+                fullchoices.append((item, item))
+            else:
+                try:
+                    fullchoices.append((item[0], item[1]))
+                except IndexError:
+                    fullchoices.append((item[0], item[0]))
+        for (index, (value, text)) in enumerate(fullchoices):
+            #   @FIXME
+            #       Unused variable `value`
+            self.poutput('  %2d. %s\n' % (index+1, text))
+        while True:
+            response    = raw_input(prompt)
+            try:
+                response    = int(response)
+                result      = fullchoices[response - 1][0]
+                break
+            except ValueError:
+                pass # loop and ask again
+        return result
+    
+    
+    #-----------------------------------------------------
+    #   OUPUT
+    #   ========
+    #   Methods related to Output
+    #-----------------------------------------------------
+    def colorize(self, val, color):
+        '''
+        Given a string (`val`), returns that string wrapped in UNIX-style 
+        special characters that turn on (and then off) text color and style.
+        If the `colors` environment variable is `False`, or the application
+        is running on Windows, will return `val` unchanged.
+        
+        `color` should be one of the supported strings (or styles):
+       
+        red/blue/green/cyan/magenta, bold, underline
+        '''
+        if self.colors and (self.stdout == self.initial_stdout):
+            return  self.colorcodes[color][True] + \
+                    val                          + \
+                    self.colorcodes[color][False]
+        return val
+
+    def poutput(self, msg):
+        '''
+        Shortcut for `self.stdout.write()`. (Adds newline if necessary.)
+        '''
+        if msg:
+            self.stdout.write(msg)
+            if msg[-1] is not '\n':
+                self.stdout.write('\n')
+    
+    def perror(self, errmsg, statement=None):
+        '''
+        Prints `errmsg`.  Includes a traceback if `debug` is `True`.
+        '''
+        if self.debug:
+            traceback.print_exc()
+        print( str(errmsg) )
+    
+    def pfeedback(self, msg):
+        '''
+        For printing nonessential feedback.  Can be silenced with `quiet`.
+        `feedback_to_output` controls whether to include in redirected output.
+        '''
+        if not self.quiet:
+            if self.feedback_to_output:
+                self.poutput(msg)
+            else:
+                print(msg)
     
     def redirect_output(self, statement):
         #   @FIXME
@@ -844,165 +1014,28 @@ class Cmd(cmd.Cmd):
             self.kept_sys.restore()
             self.kept_state = None                        
                         
-    def read_file_or_url(self, fname):
-        '''
-        Opens `fname` as a file.  Accounts for user tilde expansion and URLs.
-        '''
-        #   @FIXME
-        #       TODO: not working on localhost
-        
-        #   @FIXME
-        #       Rewrite for readability and less
-        #       indent-hell
-        if isinstance(fname, file):
-            result = open(fname, 'r')
-        else:
-            match   = self.URLRE.match(fname)
-            if match:
-                result  = urllib.urlopen(match.group(1))
-            else:
-                fname   = os.path.expanduser(fname)
-                try:
-                    result  = open( os.path.expanduser(fname), 'r')
-                except IOError:                    
-                    result  = open('%s.%s' % (os.path.expanduser(fname), 
-                                              self.default_extension), 
-                                    'r')
-        return result
-        
-    def pseudo_raw_input(self, prompt):
-        '''
-        Extracted from `cmd.cmdloop()`. Similar to `raw_input()`, but 
-        accounts for changed stdin/stdout.
-        '''
-        
-        if self.use_rawinput:
-            try:
-                line = raw_input(prompt)
-            except EOFError:
-                line = 'EOF'
-        else:
-            self.stdout.write(prompt)
-            self.stdout.flush()
-            line = self.stdin.readline()
-            if not len(line):
-                line = 'EOF'
-            else:
-                if line[-1] == '\n': # this was always true in Cmd
-                    line = line[:-1] 
-        return line
     
-    def select(self, choices, prompt='Your choice? '):
-        '''
-        Presents a numbered menu to the user.  Returns the item chosen.
-        (Modeled after the bash shell's `SELECT`.)
-           
-           Argument `choices` can be:
-
-             | a single string      -> split into one-word choices
-             | a list of strings    -> will be offered as choices
-             | a list of tuples     -> interpreted as (value, text), so 
-                                       that the return value can differ from
-                                       the text advertised to the user
-        '''
-        if isinstance(choices, six.string_types):
-            choices = zip(choices.split(), choices.split())
-        fullchoices = []
-        for item in choices:
-            if isinstance(item, six.string_types):
-                fullchoices.append((item, item))
-            else:
-                try:
-                    fullchoices.append((item[0], item[1]))
-                except IndexError:
-                    fullchoices.append((item[0], item[0]))
-        for (index, (value, text)) in enumerate(fullchoices):
-            #   @FIXME
-            #       Unused variable `value`
-            self.poutput('  %2d. %s\n' % (index+1, text))
-        while True:
-            response    = raw_input(prompt)
-            try:
-                response    = int(response)
-                result      = fullchoices[response - 1][0]
-                break
-            except ValueError:
-                pass # loop and ask again
-        return result
-    
-    def last_matching(self, arg):
-        '''
-        Gets the most recent history match for `arg`.
-        '''
-        
-        #   @FIXME
-        #       Consider refactoring into 
-        #       `History` class (in `support` module)
-        try:
-            if arg:
-                return self.history.get(arg)[-1]
-            else:
-                return self.history[-1]
-        except IndexError:
-            return None        
-    
-    def fileimport(self, statement, source):
-        '''
-        Reads `source` from a file and returns its contents.
-        '''
-        
-        #   @FIXME
-        #       Unused argument: `statement`
-        try:
-            fyle = open(os.path.expanduser(source))
-        except IOError:
-            #   @FIXME
-            #       Why doesn't this use `self.poutput()` or `self.perror()`?
-            self.stdout.write("Couldn't read from file %s\n" % source)
-            return ''
-        data = fyle.read()
-        fyle.close()
-        return data
-
-    def run_commands_at_invocation(self, callargs):
-        '''
-        Runs commands in `omecmd_plus_hooks` before executing callargs.
-        '''
-        for initial_command in callargs:
-            if self.onecmd_plus_hooks(initial_command + '\n'):
-                return self._STOP_AND_EXIT
-
-    def cmdloop(self):
-        '''
-        Initializes a parser and runs `_cmdloop()`.
-        '''
-        
-        #   @FIXME
-        #       Why isn't this using cmd2's own OptionParser?
-        parser = optparse.OptionParser()
-        parser.add_option(  '-t', 
-                            '--test', 
-                            dest    ='test',
-                            action  ='store_true', 
-                            help    ='Test against transcript(s) in FILE (accepts wildcards)')
-        (callopts, callargs) = parser.parse_args()
-        
-        #if callopts.test:
-        #    self.runTranscriptTests(callargs)
-        #else:
-        #    if not self.run_commands_at_invocation(callargs):
-        #        self._cmdloop() 
-        
-        if not self.run_commands_at_invocation(callargs):
-            self._cmdloop() 
-         
-         
     #-----------------------------------------------------
     #   COMMANDS
     #   ========
     #   Only `do_*` commands from here to the end
     #   of the class.
     #-----------------------------------------------------
+    def do__relative_load(self, arg=None):
+        '''
+        Runs commands in script at file or URL. If called within an
+        already-running script, the filename will be interpreted relative to 
+        that script's directory.
+        '''
+        if arg:
+            arg             = arg.split(None, 1)
+            targetname      = arg[0]
+            args            = (arg[1:] or [''])[0]
+            targetname      = os.path.join(
+                                self.current_script_dir or '', 
+                                targetname)
+            self.do__load('%s %s' % (targetname, args))
+    
     def do_cmdenvironment(self, args):
         '''
         Summary report of interactive parameters.
@@ -1154,12 +1187,6 @@ class Cmd(cmd.Cmd):
         '''
         raw_input(arg + '\n')
         
-    def do_shell(self, arg):
-        '''
-        Execute command as if at the OS prompt.
-        '''
-        os.system(arg)
-                
     def do_py(self, arg):  
         '''
         py <command>: Executes a Python command.
@@ -1217,7 +1244,7 @@ class Cmd(cmd.Cmd):
             except EmbeddedConsoleExit:
                 pass
             keepstate.restore()
-            
+
     @options([make_option(
                 '-s', '--script', 
                 action  =   "store_true", 
@@ -1233,15 +1260,16 @@ class Cmd(cmd.Cmd):
         | arg is string:  string search
         | arg is /enclosed in forward-slashes/: regular expression search
         '''
-        if arg:
-            history = self.history.get(arg)
-        else:
-            history = self.history
+
+        history = self.history.get(arg) if arg else self.history
+
         for hist_item in history:
             if opts.script:
                 self.poutput(hist_item)
             else:
                 self.stdout.write(hist_item.print_())
+
+    do_hi   = do_history
     
     def do_list(self, arg):
         '''
@@ -1260,10 +1288,9 @@ class Cmd(cmd.Cmd):
         for hist_item in history:
             self.poutput(hist_item.print_())
 
-    do_hi   = do_history
     do_l    = do_list
     do_li   = do_list
-        
+    
     def do_ed(self, arg):
         '''
         ed:             edit most recent command in text editor
@@ -1331,21 +1358,12 @@ class Cmd(cmd.Cmd):
             self.perror(err)
             raise
             
-    def do__relative_load(self, arg=None):
+    def do_shell(self, arg):
         '''
-        Runs commands in script at file or URL. If called from within an
-        already-running script, the filename will be interpreted relative to 
-        that script's directory.
+        Execute command as if at the OS prompt.
         '''
-        if arg:
-            arg             = arg.split(None, 1)
-            targetname      = arg[0]
-            args            = (arg[1:] or [''])[0]
-            targetname      = os.path.join(
-                                self.current_script_dir or '', 
-                                targetname)
-            self.do__load('%s %s' % (targetname, args))
-    
+        os.system(arg)
+
     def do_load(self, arg=None):           
         '''
         Runs script of command(s) from a file or URL.
@@ -1380,7 +1398,7 @@ class Cmd(cmd.Cmd):
         return stop and (stop != self._STOP_SCRIPT_NO_EXIT)    
     
     do__load = do_load  # avoid an unfortunate legacy use of do_load from sqlpython
-    
+
     def do_run(self, arg):
         '''
         run [arg]: re-runs an earlier command
@@ -1395,7 +1413,7 @@ class Cmd(cmd.Cmd):
         self.pfeedback(runme)
         if runme:
             stop    = self.onecmd_plus_hooks(runme)
-    
+
     do_r    = do_run  
 
 
