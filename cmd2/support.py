@@ -163,30 +163,10 @@ else:
         write_to_paste_buffer = get_paste_buffer
 
 
-
-class HistoryItem(str):
+class History(list):
     '''
-    This extends `str` with a tweaked `print_` method.  Also preemptively 
-    stores a lowercase version of itself as well as an index number.
+    A list of HistoryItems that knows how to respond to user requests.
     '''
-    
-    listformat = '-------------------------[%d]\n%s\n'
-    
-    def __init__(self, instr):
-        #   @FIXME
-        #       Add docstring
-        
-        #   @FIXME
-        #       Unused argument `instr`
-        str.__init__(self)
-        self.lowercase  = self.lower()
-        self.idx        = None
-    
-    def print_(self):
-        '''
-        Prints the HistoryItem using a custom listformat.
-        '''
-        return self.listformat % (self.idx, str(self))
     
     #   @FIXME
     #       Consider adding:
@@ -194,15 +174,9 @@ class HistoryItem(str):
     #       -   __format__
     #       -   __repr__
     #       -   __unicode__ (for Python 2)
-
-
-class History(list):
-    '''
-    A list of HistoryItems that knows how to respond to user requests.
-    '''
     
-    range_pattern    = re.compile(r'^\s*(?P<start>[\d]+)?\s*\-\s*(?P<end>[\d]+)?\s*$')
-    span_pattern     = re.compile(r'^\s*(?P<start>\-?\d+)?\s*(?P<separator>:|(\.{2,}))?\s*(?P<end>\-?\d+)?\s*$')
+    RANGE_PATTERN    = re.compile(r'^\s*(?P<start>[\d]+)?\s*\-\s*(?P<end>[\d]+)?\s*$')
+    SPAN_PATTERN     = re.compile(r'^\s*(?P<start>\-?\d+)?\s*(?P<separator>:|(\.{2,}))?\s*(?P<end>\-?\d+)?\s*$')
     
     def append(self, new_histitem):
         '''
@@ -237,7 +211,7 @@ class History(list):
         except IndexError:
             return []
         except ValueError:
-            range_result = self.range_pattern.search(get_histitem)
+            range_result = self.RANGE_PATTERN.search(get_histitem)
             if range_result:
                 start       = range_result.group('start') or None
                 end         = range_result.group('start') or None
@@ -265,7 +239,10 @@ class History(list):
         #   @FIXME
         #       Add DocString
         target = target.strip()
+        
         if len(target) > 1 and target[0] == target[-1] == '/':
+            #   @FIXME
+            #       Describe this conditional
             target  = target[1:-1]
         else:
             target  = re.escape(target)
@@ -277,7 +254,7 @@ class History(list):
         #       Add DocString
         if raw.lower() in ('*', '-', 'all'):
             raw = ':'
-        results = self.span_pattern.search(raw)
+        results = self.SPAN_PATTERN.search(raw)
         if not results:
             raise IndexError
         if not results.group('separator'):
@@ -299,21 +276,40 @@ class History(list):
         '''
         Gets the index number of `raw`.
         '''
-        if raw:
-            result  = self.zero_based_index(int(raw))
-        else:
-            result  = None
+        result  = self.zero_based_index(int(raw)) if raw else None
         return result
     
     def zero_based_index(self, onebased):
         '''
         Converts a one-based index (`onebased`) to a zero-based index.
         '''
-        result  = onebased
-        if result > 0:
-            result -= 1
-        return result
+        return (onebased - 1) if onebased > 0 else onebased
 
+
+class HistoryItem(str):
+    '''
+    This extends `str` with a tweaked `print_` method.  Also preemptively 
+    stores an index number and a lowercase version of itself.
+    '''
+    
+    LISTFORMAT = '-------------------------[%d]\n%s\n'
+    
+    def __init__(self, instr):
+        #   @FIXME
+        #       Add docstring
+        
+        #   @FIXME
+        #       Unused argument `instr`
+        str.__init__(self)
+        self.lowercase  = self.lower()
+        self.idx        = None
+    
+    def print_(self):
+        '''
+        Prints the HistoryItem using a custom LISTFORMAT.
+        '''
+        return self.LISTFORMAT % (self.idx, str(self))
+    
 
 class Statekeeper:
     '''
@@ -324,8 +320,17 @@ class Statekeeper:
     '''
     
     #   @FIXME
-    #       Add support for pickling protocol
-    #       http://docs.python.org/library/pickle.html#the-pickle-protocol
+    #       Consider the following data persistence tools
+    #       for enhancement/replacement of this class's
+    #       role in cmd2.
+    #
+    #       *   pickling protocol
+    #           http://docs.python.org/library/pickle.html#the-pickle-protocol
+    #       *   shelve protocol
+    #           http://docs.python.org/library/shelve.html
+    #       *   PersistentDict
+    #           http://code.activestate.com/recipes/576642/
+    #       *   
     
     def __init__(self, obj, attribs):
         #   @FIXME
