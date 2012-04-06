@@ -359,6 +359,38 @@ class Cmd(cmd.Cmd):
         #   http://github.com/zearin
         #   2012 Mar 26
         
+        #   ----------------------------
+        #   QuickRef: Pyparsing Operators
+        #   ----------------------------
+        #   ~   creates NotAny using the expression after the operator
+        #
+        #   +   creates And using the expressions before and after the operator
+        #
+        #   |   creates MatchFirst (first left-to-right match) using the 
+        #       expressions before and after the operator
+        #
+        #   ^   creates Or (longest match) using the expressions before and 
+        #       after the operator
+        #
+        #   &   creates Each using the expressions before and after the operator
+        #
+        #   *   creates And by multiplying the expression by the integer operand; 
+        #       if expression is multiplied by a 2-tuple, creates an And of 
+        #       (min,max) expressions (similar to "{min,max}" form in 
+        #       regular expressions); if min is None, intepret as (0,max); 
+        #       if max is None, interpret as expr*min + ZeroOrMore(expr)
+        #
+        #   -   like + but with no backup and retry of alternatives
+        #
+        #   *   repetition of expression
+        #
+        #   ==  matching expression to string; returns True if the string 
+        #       matches the given expression
+        #
+        #   <<  inserts the expression following the operator as the body of the 
+        #       Forward expression before the operator
+        #   ----------------------------
+          
         #   Aliased for readability inside this method
         PYP = pyparsing
 
@@ -377,7 +409,7 @@ class Cmd(cmd.Cmd):
         DO_NOT_PARSE            =   self.comment_grammars       |   \
                                     self.comment_in_progress    |   \
                                     PYP.quotedString
-                                    
+
         #OUTPUT_PARSER = (PYP.Literal('>>') | (PYP.WordStart() + '>') | PYP.Regex('[^=]>'))('output')
         OUTPUT_PARSER           =  (PYP.Literal(   2 * self.redirector) | \
                                    (PYP.WordStart()  + self.redirector) | \
@@ -408,6 +440,8 @@ class Cmd(cmd.Cmd):
         ONELN_COMMAND           =   (   ~self.multiline_command + 
                                         PYP.Word(self.legal_chars)
                                     )('command')
+        
+        #ONELN_COMMAND.setDebug(True)
         
         #   CASE SENSITIVITY for 
         #   ONELN_COMMAND and self.multiline_command
