@@ -409,8 +409,10 @@ class StubbornDict(dict):
 
 
 def stubbornDict(*arg, **kwarg):
-    #   @FIXME
-    #       Add DocString
+    '''
+    Factory function for creating StubbornDict instances.
+    StubbornDicts are dictionaries that tolerate many input formats.
+    '''
     
     #   @FIXME
     #       Why have a factory method instead 
