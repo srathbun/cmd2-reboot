@@ -89,7 +89,7 @@ __credits__     = '?'   #@FIXME
 
 
 
-if six.PY3:
+if not six.PY3:
     # 
     # Packrat is causing Python3 errors that I don't understand.
     # 
