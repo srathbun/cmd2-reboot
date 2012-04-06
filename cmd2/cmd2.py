@@ -160,17 +160,17 @@ class Cmd(cmd.Cmd):
                             '@' : 'load' , 
                             '@@': '_relative_load'}
 
-    abbrev              = True          # Abbreviated commands recognized
+    abbrev              = True          # Recognize abbreviated commands
     current_script_dir  = None
     debug               = False
     default_file_name   = 'command.txt' # For `save`, `load`, etc.
     default_to_shell    = False
     default_extension   = 'txt'         # For `save`, `load`, etc.
-    hist_exclude        = {'run','r','list','l','history','hi','ed','edit','li','eof'}
+    hist_exclude        = {'ed','edit','eof','history','hi','l','li','list','run','r'}
     feedback_to_output  = False         # Do include nonessentials in >, | output
     kept_state          = None
     locals_in_py        = True
-    no_special_parse    = {'set','ed','edit','exit'}
+    no_special_parse    = {'ed','edit','exit','set'}
     quiet               = False         # Do not suppress nonessential output
     redirector          = '>'           # for sending output to file
     reserved_words      = []
@@ -188,7 +188,7 @@ class Cmd(cmd.Cmd):
         echo                  Echo command issued into output
         editor                Program used by `edit` 	
         feedback_to_output    include nonessentials in `|`, `>` results 
-        prompt                
+        prompt                Shell prompt
         quiet                 Don't print nonessential feedback
         timing                Report execution times
         ''')
@@ -207,22 +207,23 @@ class Cmd(cmd.Cmd):
         if sys.platform[:3] == 'win':
             editor = 'notepad'
         else:
-            for editor in ['gedit', 'kate', 'vim', 'emacs', 'nano', 'pico']:
+            for editor in {'gedit', 'kate', 'vim', 'emacs', 'nano', 'pico'}:
                 if subprocess.Popen(['which', editor], stdout=subprocess.PIPE).communicate()[0]:
                     break
     
     #   @FIXME
     #       Refactor into [config? output?] module
-    colorcodes =  {
-                  'bold'    :   {True:'\x1b[1m', False:'\x1b[22m'},
-                  'underline':  {True:'\x1b[4m', False:'\x1b[24m'},
-                  
-                  'blue'    :   {True:'\x1b[34m',False:'\x1b[39m'},
-                  'cyan'    :   {True:'\x1b[36m',False:'\x1b[39m'},
-                  'green'   :   {True:'\x1b[32m',False:'\x1b[39m'},
-                  'magenta' :   {True:'\x1b[35m',False:'\x1b[39m'},
-                  'red'     :   {True:'\x1b[31m',False:'\x1b[39m'}
-                  }
+    colorcodes  =  {
+                    # non-colors
+                    'bold'    :   {True:'\x1b[1m', False:'\x1b[22m'},
+                    'underline':  {True:'\x1b[4m', False:'\x1b[24m'},
+                    # colors
+                    'blue'    :   {True:'\x1b[34m',False:'\x1b[39m'},
+                    'cyan'    :   {True:'\x1b[36m',False:'\x1b[39m'},
+                    'green'   :   {True:'\x1b[32m',False:'\x1b[39m'},
+                    'magenta' :   {True:'\x1b[35m',False:'\x1b[39m'},
+                    'red'     :   {True:'\x1b[31m',False:'\x1b[39m'}
+                   }
     
     colors = (platform.system() != 'Windows')
     
