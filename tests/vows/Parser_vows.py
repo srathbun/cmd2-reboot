@@ -320,15 +320,15 @@ class ParserVows(Vows.Context):
         def topic(self):
             return OptionParser()
             
-        def should_be_optparse_parser(self, topic):
-            expect(isinstance(topic,optparse.OptionParser)).to_be_true()
+        def should_be_instance_of_OptionParser(self, topic):
+            expect(topic).to_be_instance_of(OptionParser)
             
             
     class ParsedStringVows(Vows.Context):
         def topic(self):
             return ParsedString()
             
-        def should_be_string(self, topic):
+        def should_be_instance_of_str(self, topic):
             expect(isinstance(topic,str)).to_be_true()
         
         def should_be_instance_of_ParsedString(self, topic):
