@@ -13,8 +13,8 @@
 from __future__ import  generators,         \
                         print_function
 
-import  collections
-import  optparse
+import  collections,\
+        optparse
 
 # try:
 #     import six  #   single-source Python 2/3 helper
@@ -32,9 +32,9 @@ import  pyparsing
 
 from    cmd2            import  *
 from    cmd2.cmd2       import  Cmd
-from    cmd2.parsers    import  OptionParser,   \
-                                ParsedString,   \
-                                remaining_args
+from    cmd2.parsers    import (OptionParser,   
+                                ParsedString,   
+                                remaining_args)
 
 ###     END IMPORTS     ###
 
