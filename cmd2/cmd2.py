@@ -560,6 +560,26 @@ class Cmd(cmd.Cmd):
                 return self.postparsing_postcmd(None)
         return self.postparsing_postcmd(self.default(arg))
 
+    def _func_named(self, arg):
+        '''
+        This method searches all `do_` methods for a match with `arg`.  It 
+        returns the matched method.
+        
+        If no exact matches are found, it searches for shortened versions
+        of command names (and keywords) for an unambiguous match.
+        '''
+        result = None
+        target = 'do_' + arg
+        if target in dir(self):
+            result = target
+        else:
+            if self.abbrev:   # accept shortened versions of commands
+                funcs = [fname for fname in self.keywords 
+                                if fname.startswith(arg)]
+                if len(funcs) is 1:
+                    result = 'do_' + funcs[0]
+        return result
+    
     def poutput(self, msg):
         '''
         Shortcut for `self.stdout.write()`. (Adds newline if necessary.)
@@ -664,26 +684,6 @@ class Cmd(cmd.Cmd):
         It does nothing by default.
         '''
         return stop
-    
-    def _func_named(self, arg):
-        '''
-        This method searches all `do_` methods for a match with `arg`.  It 
-        returns the matched method.
-        
-        If no exact matches are found, it searches for shortened versions
-        of command names (and keywords) for an unambiguous match.
-        '''
-        result = None
-        target = 'do_' + arg
-        if target in dir(self):
-            result = target
-        else:
-            if self.abbrev:   # accept shortened versions of commands
-                funcs = [fname for fname in self.keywords 
-                                if fname.startswith(arg)]
-                if len(funcs) is 1:
-                    result = 'do_' + funcs[0]
-        return result
     
     def onecmd(self, line):
         '''
