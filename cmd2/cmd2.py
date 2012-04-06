@@ -110,8 +110,8 @@ if not six.PY3:
 
 #   @FIXME
 #       Consider:
-#       *   refactoring into the Cmd class
-#       *   using `__getattr__()` instead
+#       *   Refactoring into the parsers.py
+#       *   Using `__getattr__()` instead
 def _attr_get_(obj, attr):
     '''
     Returns an attribute's value (or `None` if undefined; no error).
@@ -133,7 +133,6 @@ optparse.Values.get = _attr_get_    #   this is the only use of _attr_get_()
 #       Move to parsers module...without breaking
 #       any code in this file
 pyparsing.ParserElement.setDefaultWhitespaceChars(' \t')
-
 
 
 class Cmd(cmd.Cmd):
@@ -230,13 +229,12 @@ class Cmd(cmd.Cmd):
     
     #   @FIXME
     #       Refactor this settings block into 
-    #       parser module
+    #       parsers.py
     allow_blank_lines   =   False
     comment_grammars    =   pyparsing.Or([  pyparsing.pythonStyleComment, 
                                             pyparsing.cStyleComment ])
     comment_grammars.addParseAction(lambda x: '')
-    comment_in_progress =   pyparsing.Literal('/*') + \
-                            pyparsing.SkipTo(pyparsing.stringEnd ^ '*/')
+    comment_in_progress =   '/*' + pyparsing.SkipTo(pyparsing.stringEnd ^ '*/')
     multiline_commands  =   []
     prefix_parser       =   pyparsing.Empty()
     terminators         =   [';']
@@ -308,7 +306,7 @@ class Cmd(cmd.Cmd):
         self.shortcuts      = sorted(self.shortcuts.items(), reverse=True)
         
         #   @FIXME
-        #       Refactor into parsing module
+        #       Refactor into parsers.py
         self._init_parser()
         
     
@@ -321,7 +319,7 @@ class Cmd(cmd.Cmd):
         
     
     #   @FIXME
-    #       Refactor into parser module
+    #       Refactor into parsers.py
     #   @FIXME
     #       Refactor into NOT a god-initializer 
     def _init_parser(self):
@@ -617,7 +615,7 @@ class Cmd(cmd.Cmd):
         return parse_result
    
     #   @FIXME
-    #       Refactor into parser module
+    #       Refactor into parsers.py
     def parsed(self, raw, **kwargs):
         #   @FIXME
         #       Add DocString
