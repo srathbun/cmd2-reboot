@@ -39,7 +39,7 @@ __all__ =   [   'OptionParser',
 
 class OptionParser(optparse.OptionParser):
     '''
-    A tweaked subclass of `optparse.OptionParser` to control the output
+    A tweaked subclass of `optparse.OptionParser` to control output
     of help- and error-messages.
     '''
     
