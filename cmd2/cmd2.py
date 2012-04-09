@@ -153,6 +153,9 @@ class Cmd(cmd.Cmd):
     continuation_prompt = '> '  
     timing              = False     # Prints elapsed time for each command
     
+    #   @FIXME?
+    #       Should this override cmd's `IDENTCHARS`?
+    
     # make sure your terminators are not in legal_chars!
     legal_chars         = u'!#$%.:?@_' + pyparsing.alphanums + pyparsing.alphas8bit
     shortcuts           = { '?' : 'help' , 
@@ -162,7 +165,7 @@ class Cmd(cmd.Cmd):
 
     abbrev              = True          # Recognize abbreviated commands
     current_script_dir  = None
-    debug               = False
+    debug               = True
     default_file_name   = 'command.txt' # For `save`, `load`, etc.
     default_to_shell    = False
     default_extension   = 'txt'         # For `save`, `load`, etc.
