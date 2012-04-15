@@ -18,19 +18,17 @@ import  six
 
 #   Standard Library Imports
 #   --------------------------------------------------------
-import  optparse
-import  re
+import  optparse,   \
+        re
 
 
 #   Third Party Imports
 #   --------------------------------------------------------
-import  pyparsing
-
-
-pyparsing.ParserElement.setDefaultWhitespaceChars(' \t')
-
+import  argh,       \   #   includes argparse
+        pyparsing
 
 __all__ =   [   'OptionParser',
+                'Parser',
                 'ParsedString',
                 'remaining_args',
                 'options_defined',
