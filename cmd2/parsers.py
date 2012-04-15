@@ -3,9 +3,9 @@
 #       Add Docstring
 
 #   __future__ first
-from    __future__  import  generators,         \
-                            print_function,     \
-                            with_statement
+from    __future__  import  (generators,
+                            print_function,     
+                            with_statement)
 
 
 #   six: Python 2/3 Compatibility module
