@@ -49,7 +49,7 @@ class Parser ( argh.ArghParser ):
     for the standard library’s argparse module.
     '''
     def __init__(self, *args, **kwargs):
-        super(argh.ArghParser, self).__init__(*args, **kwargs)
+        argh.ArghParser.__init__(self, *args, **kwargs)
         
     
 
