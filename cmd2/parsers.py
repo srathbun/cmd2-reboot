@@ -41,7 +41,7 @@ __all__ =   [   'OptionParser',
 pyparsing.ParserElement.setDefaultWhitespaceChars(' \t')
 
 
-class Parser ( argh.ArgumentParser ):
+class Parser ( argh.ArghParser ):
     '''(EXPERIMENTAL) New general-purpose parser for cmd2.
         
     Currently this class is built on the Argh module,
@@ -49,7 +49,9 @@ class Parser ( argh.ArgumentParser ):
     for the standard library’s argparse module.
     '''
     def __init__(self, *args, **kwargs):
-        super(arg.ArgumentParser, self).__init__(*args, **kwargs)
+        super(argh.ArghParser, self).__init__(*args, **kwargs)
+        
+    
 
 
 class OptionParser(optparse.OptionParser):
