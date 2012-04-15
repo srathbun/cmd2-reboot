@@ -617,6 +617,15 @@ class Cmd(cmd.Cmd):
                     result = 'do_' + funcs[0]
         return result
     
+    def _get_all_commands(self):
+        return list(
+                    self.reserved_words +
+                    [   item[3:] for item in dir(self)
+                        if (str(item).startswith('do_') and not 
+                            str(item).startswith('do__'))
+                    ]
+                )
+    
     def cmdloop(self):
         '''
         Initializes a parser and runs `_cmdloop()`.
