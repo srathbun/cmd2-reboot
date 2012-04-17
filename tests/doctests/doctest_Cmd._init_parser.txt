@@ -4,25 +4,25 @@
 >>> c.multilineCommands = ['multiline']
 >>> c.case_insensitive = True
 >>> c._init_parser()
->>> print (c.parser.parseString('').dump())
+>>> print (c.currState.parser.parseString('').dump())
 []
->>> print (c.parser.parseString('').dump())
+>>> print (c.currState.parser.parseString('').dump())
 []
->>> print (c.parser.parseString('/* empty command */').dump())
+>>> print (c.currState.parser.parseString('/* empty command */').dump())
 []
->>> print (c.parser.parseString('plainword').dump())
+>>> print (c.currState.parser.parseString('plainword').dump())
 ['plainword', '']
 - command: plainword
 - statement: ['plainword', '']
   - command: plainword
->>> print (c.parser.parseString('termbare;').dump())
+>>> print (c.currState.parser.parseString('termbare;').dump())
 ['termbare', '', ';', '']
 - command: termbare
 - statement: ['termbare', '', ';']
   - command: termbare
   - terminator: ;
 - terminator: ;
->>> print (c.parser.parseString('termbare; suffx').dump())
+>>> print (c.currState.parser.parseString('termbare; suffx').dump())
 ['termbare', '', ';', 'suffx']
 - command: termbare
 - statement: ['termbare', '', ';']
@@ -30,19 +30,19 @@
   - terminator: ;
 - suffix: suffx
 - terminator: ;
->>> print (c.parser.parseString('barecommand').dump())
+>>> print (c.currState.parser.parseString('barecommand').dump())
 ['barecommand', '']
 - command: barecommand
 - statement: ['barecommand', '']
   - command: barecommand
->>> print (c.parser.parseString('COMmand with args').dump())
+>>> print (c.currState.parser.parseString('COMmand with args').dump())
 ['command', 'with args']
 - args: with args
 - command: command
 - statement: ['command', 'with args']
   - args: with args
   - command: command
->>> print (c.parser.parseString('command with args and terminator; and suffix').dump())
+>>> print (c.currState.parser.parseString('command with args and terminator; and suffix').dump())
 ['command', 'with args and terminator', ';', 'and suffix']
 - args: with args and terminator
 - command: command
@@ -52,20 +52,20 @@
   - terminator: ;
 - suffix: and suffix
 - terminator: ;
->>> print (c.parser.parseString('simple | piped').dump())
+>>> print (c.currState.parser.parseString('simple | piped').dump())
 ['simple', '', '|', ' piped']
 - command: simple
 - pipeTo:  piped
 - statement: ['simple', '']
   - command: simple
->>> print (c.parser.parseString('double-pipe || is not a pipe').dump())
+>>> print (c.currState.parser.parseString('double-pipe || is not a pipe').dump())
 ['double', '-pipe || is not a pipe']
 - args: -pipe || is not a pipe
 - command: double
 - statement: ['double', '-pipe || is not a pipe']
   - args: -pipe || is not a pipe
   - command: double
->>> print (c.parser.parseString('command with args, terminator;sufx | piped').dump())
+>>> print (c.currState.parser.parseString('command with args, terminator;sufx | piped').dump())
 ['command', 'with args, terminator', ';', 'sufx', '|', ' piped']
 - args: with args, terminator
 - command: command
@@ -76,7 +76,7 @@
   - terminator: ;
 - suffix: sufx
 - terminator: ;
->>> print (c.parser.parseString('output into > afile.txt').dump())
+>>> print (c.currState.parser.parseString('output into > afile.txt').dump())
 ['output', 'into', '>', 'afile.txt']
 - args: into
 - command: output
@@ -85,7 +85,7 @@
 - statement: ['output', 'into']
   - args: into
   - command: output
->>> print (c.parser.parseString('output into;sufx | pipethrume plz > afile.txt').dump())
+>>> print (c.currState.parser.parseString('output into;sufx | pipethrume plz > afile.txt').dump())
 ['output', 'into', ';', 'sufx', '|', ' pipethrume plz', '>', 'afile.txt']
 - args: into
 - command: output
@@ -98,7 +98,7 @@
   - terminator: ;
 - suffix: sufx
 - terminator: ;
->>> print (c.parser.parseString('output to paste buffer >> ').dump())
+>>> print (c.currState.parser.parseString('output to paste buffer >> ').dump())
 ['output', 'to paste buffer', '>>', '']
 - args: to paste buffer
 - command: output
@@ -106,7 +106,7 @@
 - statement: ['output', 'to paste buffer']
   - args: to paste buffer
   - command: output
->>> print (c.parser.parseString('ignore the /* commented | > */ stuff;').dump())
+>>> print (c.currState.parser.parseString('ignore the /* commented | > */ stuff;').dump())
 ['ignore', 'the /* commented | > */ stuff', ';', '']
 - args: the /* commented | > */ stuff
 - command: ignore
@@ -115,7 +115,7 @@
   - command: ignore
   - terminator: ;
 - terminator: ;
->>> print (c.parser.parseString('has > inside;').dump())
+>>> print (c.currState.parser.parseString('has > inside;').dump())
 ['has', '> inside', ';', '']
 - args: > inside
 - command: has
@@ -124,10 +124,10 @@
   - command: has
   - terminator: ;
 - terminator: ;
->>> print (c.parser.parseString('multiline has > inside an unfinished command').dump())
+>>> print (c.currState.parser.parseString('multiline has > inside an unfinished command').dump())
 ['multiline', ' has > inside an unfinished command']
 - multilineCommand: multiline
->>> print (c.parser.parseString('multiline has > inside;').dump())
+>>> print (c.currState.parser.parseString('multiline has > inside;').dump())
 ['multiline', 'has > inside', ';', '']
 - args: has > inside
 - multilineCommand: multiline
@@ -136,10 +136,10 @@
   - multilineCommand: multiline
   - terminator: ;
 - terminator: ;
->>> print (c.parser.parseString(r'multiline command /* with comment in progress;').dump())
+>>> print (c.currState.parser.parseString(r'multiline command /* with comment in progress;').dump())
 ['multiline', ' command /* with comment in progress;']
 - multilineCommand: multiline
->>> print (c.parser.parseString('multiline command /* with comment complete */ is done;').dump())
+>>> print (c.currState.parser.parseString('multiline command /* with comment complete */ is done;').dump())
 ['multiline', 'command /* with comment complete */ is done', ';', '']
 - args: command /* with comment complete */ is done
 - multilineCommand: multiline
@@ -148,7 +148,7 @@
   - multilineCommand: multiline
   - terminator: ;
 - terminator: ;
->>> print (c.parser.parseString('multiline command ends\n\n').dump())
+>>> print (c.currState.parser.parseString('multiline command ends\n\n').dump())
 ['multiline', 'command ends', '\n', '\n']
 - args: command ends
 - multilineCommand: multiline
@@ -157,7 +157,7 @@
   - multilineCommand: multiline
   - terminator: ['\n', '\n']
 - terminator: ['\n', '\n']
->>> print (c.parser.parseString('multiline command "with term; ends" now\n\n').dump())
+>>> print (c.currState.parser.parseString('multiline command "with term; ends" now\n\n').dump())
 ['multiline', 'command "with term; ends" now', '\n', '\n']
 - args: command "with term; ends" now
 - multilineCommand: multiline
@@ -166,7 +166,7 @@
   - multilineCommand: multiline
   - terminator: ['\n', '\n']
 - terminator: ['\n', '\n']
->>> print (c.parser.parseString('what if "quoted strings /* seem to " start comments?').dump())
+>>> print (c.currState.parser.parseString('what if "quoted strings /* seem to " start comments?').dump())
 ['what', 'if "quoted strings /* seem to " start comments?']
 - args: if "quoted strings /* seem to " start comments?
 - command: what

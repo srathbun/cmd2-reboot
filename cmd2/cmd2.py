@@ -71,8 +71,6 @@ from    .support    import (History,
                             write_to_paste_buffer)
 
 from    .settings   import (state)
-from    .input_parsers import (input_parser)
-
 
 
 #   Metadata
@@ -133,7 +131,6 @@ class Cmd(cmd.Cmd):
         #       Why does this need to have `reverse=True`?
         self.currState.shortcuts      = sorted(self.currState.shortcuts.items(), reverse=True)
 
-        self.input_parser = input_parser(self.currState)
 
 #     def __getattr__(self, name):
 #         #   Only called when attr not found
@@ -155,7 +152,7 @@ class Cmd(cmd.Cmd):
         if self.use_rawinput and self.completekey:
             try:
                 import readline
-                self.old_completer = readline.get_completer()
+                self.currState.old_completer = readline.get_completer()
                 readline.set_completer(self.complete)
                 readline.parse_and_bind(self.completekey + ': complete')
             except ImportError:
@@ -163,9 +160,9 @@ class Cmd(cmd.Cmd):
                 pass
         try:
             if intro:
-                self.intro = intro
+                self.currState.intro = intro
             if self.intro:
-                self.stdout.write(str(self.intro) + "\n")
+                self.currState.stdout.write(str(self.intro) + "\n")
             stop = None
             while not stop:
                 if self.cmdqueue:

@@ -76,7 +76,6 @@ class OptionParser(optparse.OptionParser):
 class ParsedString(str):
     #   @FIXME
     #       Add DocString
-    
     def full_parsed_statement(self):
         #   @FIXME
         #       Add DocString

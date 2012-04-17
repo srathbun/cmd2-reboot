@@ -1,5 +1,3 @@
-README.txt
-cmd2.py
 setup.py
 cmd2.egg-info/PKG-INFO
 cmd2.egg-info/SOURCES.txt

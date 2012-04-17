@@ -1,37 +1,38 @@
 Metadata-Version: 1.0
 Name: cmd2
-Version: 0.6.4
+Version: 0.6.5
 Summary: Extra features for standard library's cmd module
 Home-page: http://packages.python.org/cmd2/
 Author: Catherine Devlin
 Author-email: catherine.devlin@gmail.com
 License: MIT
-Description: Enhancements for standard library's cmd module.
+Description: Enhancements for standard library's `cmd` module.
         
-        Drop-in replacement adds several features for command-prompt tools:
+        This drop-in replacement adds several features for command-prompt tools:
         
             * Searchable command history (commands: "hi", "li", "run")
             * Load commands from file, save to file, edit commands in file
             * Multi-line commands
             * Case-insensitive commands
-            * Special-character shortcut commands (beyond cmd's "@" and "!")
+            * Accepts abbreviated commands when unambiguous
+            * Parse commands with flags
+            * Special-character shortcut commands beyond cmd's `@` and `!`
             * Settable environment parameters
-            * Parsing commands with flags
-            * > (filename), >> (filename) redirect output to file
-            * < (filename) gets input from file
-            * bare >, >>, < redirect to/from paste buffer
-            * accepts abbreviated commands when unambiguous
+            * `> _filename_`, `>> _filename_`: redirect output to _filename_
+            * `< _filename_`: get input from _filename_
+            * `>`, `>>`, `<` (without a filename): Redirect to/from the paste buffer
             * `py` enters interactive Python console
-            * test apps against sample session transcript (see example/example.py)
+            * Test apps against sample session transcript (see example/example.py)
         
-        Useable without modification anywhere cmd is used; simply import cmd2.Cmd in place of cmd.Cmd.
+        Usable without modification anywhere `cmd` is used. Simply `import cmd2.Cmd` in place of `cmd.Cmd`.
         
-        Running `2to3 <http://docs.python.org/library/2to3.html>` against ``cmd2.py`` 
+        Running `2to3 <http://docs.python.org/library/2to3.html>` against `cmd2.py` 
         generates working, Python3-based code.
         
-        See docs at http://packages.python.org/cmd2/
+        Documentation:
+        http://packages.python.org/cmd2/
         
-Keywords: command prompt console cmd
+Keywords: command prompt console cmd shell cli
 Platform: UNKNOWN
 Classifier: Development Status :: 4 - Beta
 Classifier: Environment :: Console
@@ -39,5 +40,6 @@ Classifier: Operating System :: OS Independent
 Classifier: Intended Audience :: Developers
 Classifier: Intended Audience :: System Administrators
 Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python 3
 Classifier: License :: OSI Approved :: MIT License
 Classifier: Topic :: Software Development :: Libraries :: Python Modules
