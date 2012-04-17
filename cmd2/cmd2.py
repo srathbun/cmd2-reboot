@@ -70,6 +70,7 @@ from    .support    import (History,
                             replace_with_file_contents,
                             write_to_paste_buffer)
 
+from    .settings   import (state)
 
 
 
@@ -139,126 +140,22 @@ class Cmd(cmd.Cmd):
     #   @FIXME
     #       Add DocString 
     #       (This *is* the core class, after all!)
-    
-    
-    #   @FIXME
-    #       CURRENT IDEA (subject to change):
-    #       Refactor into a Settings class, subdivided into:
-    #       -   settable/not-settable
-    #       -   input-related settings (parsing, case-sensitivity, shortcuts, etc.)
-    #       -   output-related settings (printing time, prompt, etc.)
-    #       -   component-level settings (history settings into history class, etc.)
-    echo                = False
-    case_insensitive    = True      # Commands recognized regardless of case
-    continuation_prompt = '> '  
-    timing              = False     # Prints elapsed time for each command
-    
-    #   @FIXME?
-    #       Should this override cmd's `IDENTCHARS`?
-    
-    # make sure your terminators are not in legal_chars!
-    legal_chars         = u'!#$%.:?@_' + pyparsing.alphanums + pyparsing.alphas8bit
-    shortcuts           = { '?' : 'help' , 
-                            '!' : 'shell', 
-                            '@' : 'load' , 
-                            '@@': '_relative_load'}
-
-    abbrev              = True          # Recognize abbreviated commands
-    current_script_dir  = None
-    debug               = True
-    default_file_name   = 'command.txt' # For `save`, `load`, etc.
-    default_to_shell    = False
-    default_extension   = 'txt'         # For `save`, `load`, etc.
-    hist_exclude        = {'ed','edit','eof','history','hi','l','li','list','run','r'}
-    feedback_to_output  = False         # Do include nonessentials in >, | output
-    kept_state          = None
-    locals_in_py        = True
-    no_special_parse    = {'ed','edit','exit','set'}
-    quiet               = False         # Do not suppress nonessential output
-    redirector          = '>'           # for sending output to file
-    reserved_words      = []
-    
-    #   @FIXME
-    #       Refactor into a Settings class (subdivided into settable/not-settable)
-    settable            = stubbornDict(
-        '''
-        abbrev                Accept abbreviated commands
-        case_insensitive      upper- and lower-case both OK
-        colors                Colorized output (*nix only)
-        continuation_prompt   On 2nd+ line of input
-        debug                 Show full error stack on error
-        default_file_name     for `save`, `load`, etc.
-        echo                  Echo command issued into output
-        editor                Program used by `edit` 	
-        feedback_to_output    include nonessentials in `|`, `>` results 
-        prompt                Shell prompt
-        quiet                 Don't print nonessential feedback
-        timing                Report execution times
-        ''')
-    
-    #   ************************************
-    #   End "original" variable declarations
-    #   ************************************
-    #   Starting here, variables were collected
-    #   together from various places within the class.
-    
-    _STOP_AND_EXIT       = True # distinguish end of script file from actual exit
-    _STOP_SCRIPT_NO_EXIT = -999
-    
-    editor = os.environ.get('EDITOR')
-    if not editor:
-        if sys.platform[:3] == 'win':
-            editor = 'notepad'
-        else:
-            for editor in {'gedit', 'kate', 'vim', 'emacs', 'nano', 'pico'}:
-                if subprocess.Popen(['which', editor], stdout=subprocess.PIPE).communicate()[0]:
-                    break
-    
-    #   @FIXME
-    #       Refactor into [config? output?] module
-    colorcodes  =  {
-                    # non-colors
-                    'bold'    :   {True:'\x1b[1m', False:'\x1b[22m'},
-                    'underline':  {True:'\x1b[4m', False:'\x1b[24m'},
-                    # colors
-                    'blue'    :   {True:'\x1b[34m',False:'\x1b[39m'},
-                    'cyan'    :   {True:'\x1b[36m',False:'\x1b[39m'},
-                    'green'   :   {True:'\x1b[32m',False:'\x1b[39m'},
-                    'magenta' :   {True:'\x1b[35m',False:'\x1b[39m'},
-                    'red'     :   {True:'\x1b[31m',False:'\x1b[39m'}
-                   }
-    
-    colors = (platform.system() != 'Windows')
-    
-    
-    #   @FIXME
-    #       Refactor this settings block into 
-    #       parsers.py
-    allow_blank_lines   =   False
-    comment_grammars    =   pyparsing.Or([  pyparsing.pythonStyleComment, 
-                                            pyparsing.cStyleComment ])
-    comment_grammars.addParseAction(lambda x: '')
-    comment_in_progress =   '/*' + pyparsing.SkipTo(pyparsing.stringEnd ^ '*/')
-    multiline_commands  =   []
-    prefix_parser       =   pyparsing.Empty()
-    terminators         =   [';']
-    
-    
     def __init__(self, *args, **kwargs):
         #   @FIXME
         #       Add DocString
-        
         #   @FIXME
         #       Describe what happens in __init__
-        
         #   @FIXME
         #       Is there a way to use `__super__`
         #       that is Python 2+3 compatible?
         cmd.Cmd.__init__(self, *args, **kwargs)
-        
+
         self.initial_stdout = sys.stdout
         self.history        = History()
         self.pystate        = {}
+
+        self.defaultState   = state()
+        self.currState      = self.defaultState
 
 #         self.settings_from_cmd = frozenset({
 #                                     'doc_header',
@@ -307,7 +204,7 @@ class Cmd(cmd.Cmd):
         
         #   @FIXME
         #       Why does this need to have `reverse=True`?
-        self.shortcuts      = sorted(self.shortcuts.items(), reverse=True)
+        self.currState.shortcuts      = sorted(self.currState.shortcuts.items(), reverse=True)
         
         #   @FIXME
         #       Refactor into parsers.py
@@ -401,7 +298,7 @@ class Cmd(cmd.Cmd):
         #   Tell pyparsing how to parse 
         #   file input from '< filename'
         #   ----------------------------
-        FILENAME    = PYP.Word(self.legal_chars + '/\\')
+        FILENAME    = PYP.Word(self.currState.legal_chars + '/\\')
         INPUT_MARK  = PYP.Literal('<')
         INPUT_MARK.setParseAction(lambda x: '')
         INPUT_FROM  = FILENAME('INPUT_FROM')
@@ -409,55 +306,55 @@ class Cmd(cmd.Cmd):
         #   ----------------------------
         
          
-        DO_NOT_PARSE            =   self.comment_grammars       |   \
-                                    self.comment_in_progress    |   \
+        DO_NOT_PARSE            =   self.currState.comment_grammars       |   \
+                                    self.currState.comment_in_progress    |   \
                                     PYP.quotedString
 
         #OUTPUT_PARSER = (PYP.Literal('>>') | (PYP.WordStart() + '>') | PYP.Regex('[^=]>'))('output')
-        OUTPUT_PARSER           =  (PYP.Literal(   2 * self.redirector) | \
-                                   (PYP.WordStart()  + self.redirector) | \
-                                    PYP.Regex('[^=]' + self.redirector))('output')
+        OUTPUT_PARSER           =  (PYP.Literal(   2 * self.currState.redirector) | \
+                                   (PYP.WordStart()  + self.currState.redirector) | \
+                                    PYP.Regex('[^=]' + self.currState.redirector))('output')
 
         PIPE                    =   PYP.Keyword('|', identChars='|')
 
         STRING_END              =   PYP.stringEnd ^ '\nEOF'
-        
+
         TERMINATOR_PARSER       =   PYP.Or([
                                         (hasattr(t, 'parseString') and t)
-                                        or PYP.Literal(t) for t in self.terminators
+                                        or PYP.Literal(t) for t in self.currState.terminators
                                     ])('terminator')
-        
+
         #   moved here from class-level variable
-        self.URLRE              =   re.compile('(https?://[-\\w\\./]+)')
-        
-        self.keywords           =   self.reserved_words + [fname[3:] for fname in dir(self) if fname.startswith('do_')]        
-        
-        self.comment_grammars.ignore(PYP.quotedString).setParseAction(lambda x: '')
-        
+        self.currState.URLRE              =   re.compile('(https?://[-\\w\\./]+)')
+
+        self.currState.keywords           =   self.currState.reserved_words + [fname[3:] for fname in dir(self) if fname.startswith('do_')]
+
+        self.currState.comment_grammars.ignore(PYP.quotedString).setParseAction(lambda x: '')
+
         #   not to be confused with `multiln_parser` (below)
-        self.multiline_command  =   PYP.Or([
-                                        PYP.Keyword(c, caseless=self.case_insensitive) 
-                                        for c in self.multiline_commands
+        self.currState.multiline_command  =   PYP.Or([
+                                        PYP.Keyword(c, caseless=self.currState.case_insensitive)
+                                        for c in self.currState.multiline_commands
                                     ])('multiline_command')
-        
-        ONELN_COMMAND           =   (   ~self.multiline_command + 
-                                        PYP.Word(self.legal_chars)
+
+        ONELN_COMMAND           =   (   ~self.currState.multiline_command +
+                                        PYP.Word(self.currState.legal_chars)
                                     )('command')
-        
+
         #ONELN_COMMAND.setDebug(True)
-        
+
         #   CASE SENSITIVITY for 
         #   ONELN_COMMAND and self.multiline_command
-        if self.case_insensitive:
+        if self.currState.case_insensitive:
             #   Set parsers to account for case insensitivity (if appropriate)
-            self.multiline_command.setParseAction(lambda x: x[0].lower())
+            self.currState.multiline_command.setParseAction(lambda x: x[0].lower())
             ONELN_COMMAND.setParseAction(lambda x: x[0].lower())
-                                    
-        self.save_parser        = ( PYP.Optional(PYP.Word(PYP.nums)^'*')('idx')
-                                  + PYP.Optional(PYP.Word(self.legal_chars + '/\\'))('fname') 
+
+        self.currState.save_parser        = ( PYP.Optional(PYP.Word(PYP.nums)^'*')('idx')
+                                  + PYP.Optional(PYP.Word(self.currState.legal_chars + '/\\'))('fname')
                                   + PYP.stringEnd)
-        
-        AFTER_ELEMENTS          =   PYP.Optional(PIPE + 
+
+        AFTER_ELEMENTS          =   PYP.Optional(PIPE +
                                                     PYP.SkipTo(
                                                         OUTPUT_PARSER ^ STRING_END,
                                                         ignore=DO_NOT_PARSE
@@ -470,7 +367,7 @@ class Cmd(cmd.Cmd):
                                                  ).setParseAction(lambda x: x[0].strip())('outputTo')
                                              )
 
-        self.multiln_parser = (((self.multiline_command ^ ONELN_COMMAND) 
+        self.currState.multiln_parser = (((self.currState.multiline_command ^ ONELN_COMMAND)
                                 +   PYP.SkipTo(
                                         TERMINATOR_PARSER, 
                                         ignore=DO_NOT_PARSE
@@ -482,10 +379,10 @@ class Cmd(cmd.Cmd):
                                     ).setParseAction(lambda x: x[0].strip())('suffix') 
                                 + AFTER_ELEMENTS
                              )
-        
-        self.multiln_parser.ignore(self.comment_in_progress)
-        
-        self.singleln_parser  = (
+
+        self.currState.multiln_parser.ignore(self.currState.comment_in_progress)
+
+        self.currState.singleln_parser  = (
                                     (   ONELN_COMMAND + PYP.SkipTo(
                                         TERMINATOR_PARSER 
                                         ^ STRING_END 
@@ -497,47 +394,46 @@ class Cmd(cmd.Cmd):
                                 + AFTER_ELEMENTS)
         #self.multiln_parser  = self.multiln_parser('multiln_parser')
         #self.singleln_parser = self.singleln_parser('singleln_parser')
-        
-        
-        #   Configure according to `allow_blank_lines` setting
-        if self.allow_blank_lines:
-            self.blankln_termination_parser = PYP.NoMatch
-        else:
-            self.blankln_terminator = (PYP.lineEnd + PYP.lineEnd)('terminator')
-            self.blankln_terminator('terminator')
-            self.blankln_termination_parser = (
-                                                (self.multiline_command ^ ONELN_COMMAND) 
-                                                + PYP.SkipTo(
-                                                    self.blankln_terminator, 
-                                                    ignore=DO_NOT_PARSE
-                                                ).setParseAction(lambda x: x[0].strip())('args') 
-                                                + self.blankln_terminator)('statement')
 
-        self.blankln_termination_parser = self.blankln_termination_parser('statement')
-        
-        self.parser = self.prefix_parser + (STRING_END                      |
-                                            self.multiln_parser             |
-                                            self.singleln_parser            |
-                                            self.blankln_termination_parser | 
-                                            self.multiline_command          +  
+
+        #   Configure according to `allow_blank_lines` setting
+        if self.currState.allow_blank_lines:
+            self.currState.blankln_termination_parser = PYP.NoMatch
+        else:
+            self.currState.blankln_terminator = (PYP.lineEnd + PYP.lineEnd)('terminator')
+            self.currState.blankln_terminator('terminator')
+            self.currState.blankln_termination_parser = (
+                                                (self.currState.multiline_command ^ ONELN_COMMAND)
+                                                + PYP.SkipTo(
+                                                    self.currState.blankln_terminator,
+                                                    ignore=DO_NOT_PARSE
+                                                ).setParseAction(lambda x: x[0].strip())('args')
+                                                + self.currState.blankln_terminator)('statement')
+
+        self.currState.blankln_termination_parser = self.currState.blankln_termination_parser('statement')
+
+        self.currState.parser = self.currState.prefix_parser + (STRING_END                      |
+                                            self.currState.multiln_parser             |
+                                            self.currState.singleln_parser            |
+                                            self.currState.blankln_termination_parser |
+                                            self.currState.multiline_command          +
                                             PYP.SkipTo(
                                                 STRING_END, 
                                                 ignore=DO_NOT_PARSE) 
                                             )
-        
-        self.parser.ignore(self.comment_grammars)
-        
+
+        self.currState.parser.ignore(self.currState.comment_grammars)
         # a not-entirely-satisfactory way of distinguishing
         # '<' as in "import from" from 
         # '<' as in "lesser than"
-        self.input_parser = INPUT_MARK                + \
+        self.currState.input_parser = INPUT_MARK                + \
                             PYP.Optional(INPUT_FROM)  + \
                             PYP.Optional('>')         + \
                             PYP.Optional(FILENAME)    + \
                             (PYP.stringEnd | '|')
-        
-        self.input_parser.ignore(self.comment_in_progress)               
-    
+
+        self.currState.input_parser.ignore(self.currState.comment_in_progress)
+
     def _cmdloop(self, intro=None):
         '''
         Repeatedly issue a prompt, accept input, parse an initial prefix

@@ -24,7 +24,8 @@ import  optparse,   \
 
 #   Third Party Imports
 #   --------------------------------------------------------
-import  argh,       \   #   includes argparse
+#   argh includes argparse
+import  argh,       \
         pyparsing
 
 __all__ =   [   'OptionParser',
