@@ -83,15 +83,15 @@ class state(object):
     case_insensitive    = True      # Commands recognized regardless of case
     continuation_prompt = '> '
     timing              = False     # Prints elapsed time for each command
-    
+
     #   @FIXME?
     #       Should this override cmd's `IDENTCHARS`?
-    
+
     # make sure your terminators are not in legal_chars!
     legal_chars         = u'!#$%.:?@_' + pyparsing.alphanums + pyparsing.alphas8bit
-    shortcuts           = { '?' : 'help' , 
-                            '!' : 'shell', 
-                            '@' : 'load' , 
+    shortcuts           = { '?' : 'help' ,
+                            '!' : 'shell',
+                            '@' : 'load' ,
                             '@@': '_relative_load'}
 
     abbrev              = True          # Recognize abbreviated commands
@@ -108,7 +108,7 @@ class state(object):
     quiet               = False         # Do not suppress nonessential output
     redirector          = '>'           # for sending output to file
     reserved_words      = []
-    
+
     #   @FIXME
     #       Refactor into a Settings class (subdivided into settable/not-settable)
     settable            = stubbornDict(
@@ -120,22 +120,22 @@ class state(object):
         debug                 Show full error stack on error
         default_file_name     for `save`, `load`, etc.
         echo                  Echo command issued into output
-        editor                Program used by `edit` 	
-        feedback_to_output    include nonessentials in `|`, `>` results 
+        editor                Program used by `edit`
+        feedback_to_output    include nonessentials in `|`, `>` results
         prompt                Shell prompt
         quiet                 Don't print nonessential feedback
         timing                Report execution times
         ''')
-    
+
     #   ************************************
     #   End "original" variable declarations
     #   ************************************
     #   Starting here, variables were collected
     #   together from various places within the class.
-    
+
     _STOP_AND_EXIT       = True # distinguish end of script file from actual exit
     _STOP_SCRIPT_NO_EXIT = -999
-    
+
     editor = os.environ.get('EDITOR')
     if not editor:
         if sys.platform[:3] == 'win':
@@ -144,7 +144,7 @@ class state(object):
             for editor in {'gedit', 'kate', 'vim', 'emacs', 'nano', 'pico'}:
                 if subprocess.Popen(['which', editor], stdout=subprocess.PIPE).communicate()[0]:
                     break
-    
+
     #   @FIXME
     #       Refactor into [config? output?] module
     colorcodes  =  {
@@ -158,20 +158,63 @@ class state(object):
                     'magenta' :   {True:'\x1b[35m',False:'\x1b[39m'},
                     'red'     :   {True:'\x1b[31m',False:'\x1b[39m'}
                    }
-    
+
     colors = (platform.system() != 'Windows')
-    
-    
+
     #   @FIXME
     #       Refactor this settings block into 
     #       parsers.py
     allow_blank_lines   =   False
-    comment_grammars    =   pyparsing.Or([  pyparsing.pythonStyleComment, 
+    comment_grammars    =   pyparsing.Or([  pyparsing.pythonStyleComment,
                                             pyparsing.cStyleComment ])
     comment_grammars.addParseAction(lambda x: '')
     comment_in_progress =   '/*' + pyparsing.SkipTo(pyparsing.stringEnd ^ '*/')
     multiline_commands  =   []
     prefix_parser       =   pyparsing.Empty()
     terminators         =   [';']
-    
-    
+
+#    @FIXME
+#    commented out in Cmd, Purpose?
+#         self.settings_from_cmd = frozenset({
+#                                     'doc_header',
+#                                     'doc_leader',
+#                                     'identchars',
+#                                     'intro',
+#                                     'lastcmd',
+#                                     'misc_header',
+#                                     'nohelp',
+#                                     'prompt',
+#                                     'ruler',
+#                                     'undoc_header',
+#                                     'use_rawinput'})
+
+#         self.settings_from_cmd2 = ( 'abbrev',
+#                                     'case_insensitive',
+#                                     'continuation_prompt',
+#                                     'current_script_dir',
+#                                     'debug',
+#                                     'default_file_name',
+#                                     'default_to_shell',
+#                                     'default_extension',
+#                                     'echo',
+#                                     'hist_exclude',
+#                                     'feedback_to_output',
+#                                     'kept_state',
+#                                     'legal_chars',
+#                                     'locals_in_py',
+#                                     'no_special_parse',
+#                                     'quiet',
+#                                     'redirector',
+#                                     'reserved_words',
+#                                     'shortcuts',
+#                                     'timing')
+
+#         self.settings_for_parsing = ('abbrev',
+#                                      'case_insensitive',
+#                                      'default_to_shell',
+#                                      'legal_chars',
+#                                      'locals_in_py',
+#                                      'no_special_parse',
+#                                      'redirector',
+#                                      'reserved_words',
+#                                      'shortcuts')
