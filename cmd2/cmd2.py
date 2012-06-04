@@ -131,13 +131,6 @@ class Cmd(cmd.Cmd):
         #       Why does this need to have `reverse=True`?
         self.currState.shortcuts      = sorted(self.currState.shortcuts.items(), reverse=True)
 
-
-#     def __getattr__(self, name):
-#         #   Only called when attr not found
-#         #   in the usual places
-#         #print("\n" + 'CALLING __getattr__({})'.format( name ) + "\n")
-#         #return self.settings[name]
-
     def _cmdloop(self, intro=None):
         '''
         Repeatedly issue a prompt, accept input, parse an initial prefix
@@ -161,27 +154,27 @@ class Cmd(cmd.Cmd):
         try:
             if intro:
                 self.currState.intro = intro
-            if self.intro:
-                self.currState.stdout.write(str(self.intro) + "\n")
+            if self.currState.intro:
+                # this should pass to the appropriate output method
+                self.currState.stdout.write(str(self.currState.intro) + "\n")
             stop = None
             while not stop:
-                if self.cmdqueue:
-                    line = self.cmdqueue.pop(0)
+                if self.currState.cmdqueue:
+                    line = self.currState.cmdqueue.pop(0)
                 else:
                     line = self.pseudo_raw_input(self.prompt)
-                if self.echo and (isinstance(self.stdin, file)):
+                if self.currState.echo and (isinstance(self.stdin, file)):
                     self.stdout.write(line + '\n')
                 stop = self.onecmd_plus_hooks(line)
             self.postloop()
         finally:
-            if self.use_rawinput and self.completekey:
+            if self.currState.use_rawinput and self.currState.completekey:
                 try:
                     import readline #   okay to *re-import* readline?
-                    readline.set_completer(self.old_completer)
+                    readline.set_completer(self.currState.old_completer)
                 except ImportError:
-                    #   @FIXME
-                    #       Why is this passed?
-                    pass    
+                    # this is passed because the readline method may not be installed (I.E. windows)
+                    pass
             return stop
 
     def _default(self, statement):
@@ -190,7 +183,7 @@ class Cmd(cmd.Cmd):
         statement to the shell if `default_to_shell` is `True`.  
         '''
         arg = statement.full_parsed_statement()
-        if self.default_to_shell:
+        if self.currState.default_to_shell:
             result = os.system(arg)
             if not result:
                 return self.postparsing_postcmd(None)
@@ -198,19 +191,22 @@ class Cmd(cmd.Cmd):
 
     def _func_named(self, arg):
         '''
-        This method searches all `do_` methods for a match with `arg`.  It 
+        This method searches all `do_` methods for a match with `arg`.  It
         returns the matched method.
-        
+
         If no exact matches are found, it searches for shortened versions
         of command names (and keywords) for an unambiguous match.
         '''
+        #   @FIXME
+        #      migrate do methods out of cmd
+        #      this will make it easier to work with
         result = None
         target = 'do_' + arg
         if target in dir(self):
             result = target
         else:
-            if self.abbrev:   # accept shortened versions of commands
-                funcs = [fname for fname in self.keywords 
+            if self.currState.abbrev:   # accept shortened versions of commands
+                funcs = [fname for fname in self.currState.keywords
                                 if fname.startswith(arg)]
                 if len(funcs) is 1:
                     result = 'do_' + funcs[0]
@@ -220,25 +216,25 @@ class Cmd(cmd.Cmd):
         '''
         Initializes a parser and runs `_cmdloop()`.
         '''
-        
         #   @FIXME
         #       Why isn't this using cmd2's own OptionParser?
+        #       This appears to be setting up a simple test, which is disabled
         parser = optparse.OptionParser()
-        parser.add_option(  '-t', 
-                            '--test', 
+        parser.add_option(  '-t',
+                            '--test',
                             dest    ='test',
-                            action  ='store_true', 
+                            action  ='store_true',
                             help    ='Test against transcript(s) in FILE (accepts wildcards)')
         (callopts, callargs) = parser.parse_args()
-        
+
         #if callopts.test:
         #    self.runTranscriptTests(callargs)
         #else:
         #    if not self.run_commands_at_invocation(callargs):
         #        self._cmdloop() 
-        
+
         if not self.run_commands_at_invocation(callargs):
-            self._cmdloop() 
+            self._cmdloop()
 
     def onecmd(self, line):
         '''
@@ -247,12 +243,12 @@ class Cmd(cmd.Cmd):
 
         This may be overridden, but shouldn't normally need to be.
         (See `precmd()` and `postcmd()` for useful execution hooks.)
-        
-        Returns a flag indicating whether interpretation of commands by 
+
+        Returns a flag indicating whether interpretation of commands by
         the interpreter should stop.
         '''
-        statement    = self.parsed(line)
-        self.lastcmd = statement.parsed.raw   
+        statement    = self.currState.parsed(line)
+        self.currState.lastcmd = statement.parsed.raw
         funcname     = self._func_named(statement.parsed.command)
         if not funcname:
             return self._default(statement)
@@ -260,8 +256,8 @@ class Cmd(cmd.Cmd):
             func    = getattr(self, funcname)
         except AttributeError:
             return self._default(statement)
-        stop = func(statement) 
-        return stop                
+        stop = func(statement)
+        return stop
 
     def onecmd_plus_hooks(self, line):
         '''
@@ -281,7 +277,7 @@ class Cmd(cmd.Cmd):
                 if stop:
                     return self.postparsing_postcmd(stop)
                 if statement.parsed.command not in self.hist_exclude:
-                    self.history.append(statement.parsed.raw)      
+                    self.history.append(statement.parsed.raw)
                 try:
                     self.redirect_output(statement)
                     timestart   = datetime.datetime.now()
@@ -299,7 +295,7 @@ class Cmd(cmd.Cmd):
             except Exception, err:
                 self.perror(str(err), statement)
         finally:
-            return self.postparsing_postcmd(stop)         
+            return self.postparsing_postcmd(stop)
 
     def run_commands_at_invocation(self, callargs):
         '''
